@@ -308,3 +308,6 @@ tbody tr:hover { background: #f8fbff; }
   .carrier-select-row { flex-wrap: wrap; }
   .carrier-select-row select { flex: 1; min-width: 0; }
 }
+
+/* Fix: modal hidden state */
+.hidden { display: none !important; }

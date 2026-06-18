@@ -61,7 +61,7 @@ async function handleQuery() {
 async function showLogisticsModal(carrier, trackingNo) {
   const overlay = document.getElementById('logisticsModal');
   const body = document.getElementById('logisticsBody');
-  overlay.classList.remove('hidden');
+  overlay.classList.add("show");
   body.innerHTML = `<div class="logistics-loading">🔍 正在查询物流...</div>`;
 
   try {
@@ -98,7 +98,7 @@ async function showLogisticsModal(carrier, trackingNo) {
 }
 
 function closeLogistics() {
-  document.getElementById('logisticsModal').classList.add('hidden');
+  document.getElementById("logisticsModal").classList.remove("show");
 }
 
 // 点击遮罩层关闭
