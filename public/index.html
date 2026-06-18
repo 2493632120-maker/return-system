@@ -1,132 +1,395 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>售后换货管理系统</title>
-  <link rel="stylesheet" href="style.css">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>售后换货管理系统</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'PingFang SC','Microsoft YaHei',sans-serif;background:#f0f2f5;color:#333;line-height:1.6;min-height:100vh}
+
+/* Login */
+.login-wrap{display:flex;align-items:center;justify-content:center;min-height:100vh;background:linear-gradient(135deg,#1a73e8,#0d47a1)}
+.login-box{background:#fff;border-radius:12px;padding:40px;width:380px;box-shadow:0 8px 32px rgba(0,0,0,.2)}
+.login-box h2{text-align:center;margin-bottom:8px;font-size:20px}
+.login-box p{text-align:center;color:#888;font-size:13px;margin-bottom:20px}
+.login-box input{width:100%;padding:10px 14px;border:1px solid #d9d9d9;border-radius:6px;font-size:14px;margin-bottom:12px;outline:none}
+.login-box input:focus{border-color:#1a73e8;box-shadow:0 0 0 2px rgba(26,115,232,.15)}
+.login-btn{width:100%;padding:10px;background:#1a73e8;color:#fff;border:none;border-radius:6px;font-size:15px;cursor:pointer;font-weight:500}
+.login-btn:hover{background:#1557b0}
+.login-error{color:#e53935;font-size:13px;text-align:center;margin-top:8px;display:none}
+
+/* Guest banner */
+.guest-banner{background:#fff3cd;color:#856404;padding:8px 16px;text-align:center;font-size:13px;border-bottom:1px solid #ffeeba}
+
+/* Header */
+.header{background:linear-gradient(135deg,#1a73e8,#0d47a1);color:#fff;padding:14px 20px;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:100}
+.header h1{font-size:18px;font-weight:600}
+.header-right{display:flex;align-items:center;gap:12px}
+.header-right .role{font-size:12px;opacity:.8;background:rgba(255,255,255,.15);padding:3px 10px;border-radius:10px}
+.header-right .logout-btn{background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.3);color:#fff;padding:4px 12px;border-radius:5px;font-size:12px;cursor:pointer}
+.header-right .logout-btn:hover{background:rgba(255,255,255,.25)}
+
+.container{max-width:1300px;margin:0 auto;padding:16px;display:grid;grid-template-columns:380px 1fr;gap:16px}
+@media(max-width:900px){.container{grid-template-columns:1fr}}
+
+.panel{background:#fff;border-radius:8px;box-shadow:0 1px 3px rgba(0,0,0,.08);overflow:hidden}
+.panel-hd{padding:12px 16px;border-bottom:1px solid #e8e8e8;display:flex;justify-content:space-between;align-items:center;font-size:14px;font-weight:600}
+.panel-bd{padding:16px}
+.form-group{margin-bottom:12px}
+.form-group label{display:block;font-size:12px;font-weight:500;color:#555;margin-bottom:4px}
+.form-group .req{color:#e53935}
+input,select,textarea{width:100%;padding:7px 10px;border:1px solid #d9d9d9;border-radius:5px;font-size:13px;outline:none;transition:border .2s;font-family:inherit}
+input:focus,select:focus,textarea:focus{border-color:#1a73e8;box-shadow:0 0 0 2px rgba(26,115,232,.15)}
+textarea{resize:vertical}
+.form-row{display:flex;gap:10px;flex-wrap:wrap}
+.form-row>*{flex:1;min-width:120px}
+.carrier-row{display:flex;gap:6px}
+.carrier-row select{flex:0 0 140px}
+.carrier-row input{flex:1}
+.btn{display:inline-flex;align-items:center;gap:4px;padding:7px 16px;border:none;border-radius:5px;font-size:13px;font-weight:500;cursor:pointer;transition:all .15s;font-family:inherit}
+.btn-primary{background:#1a73e8;color:#fff}
+.btn-primary:hover{background:#1557b0}
+.btn-sm{padding:4px 10px;font-size:11px}
+.btn-outline{background:none;border:1px solid #d9d9d9;color:#555}
+.btn-outline:hover{border-color:#1a73e8;color:#1a73e8}
+.btn-danger{background:#e53935;color:#fff}
+.form-actions{display:flex;gap:8px;padding-top:4px}
+.chips{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:6px}
+.chip{padding:3px 12px;font-size:11px;border:1px solid #d9d9d9;border-radius:14px;background:#fafafa;cursor:pointer;color:#555;transition:all .15s}
+.chip:hover{border-color:#1a73e8;color:#1a73e8;background:#e8f0fe}
+.radio-group{display:flex;gap:16px;padding-top:2px}
+.radio-group label{display:flex;align-items:center;gap:4px;font-size:13px;cursor:pointer;font-weight:400}
+.table-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:12px}
+thead th{background:#fafafa;padding:8px 10px;text-align:left;font-weight:600;color:#555;border-bottom:2px solid #e8e8e8;white-space:nowrap}
+tbody td{padding:8px 10px;border-bottom:1px solid #f0f0f0;vertical-align:middle}
+tbody tr:hover{background:#f8fbff}
+.empty{text-align:center;color:#999;padding:30px 0!important}
+.badge{display:inline-block;padding:1px 8px;border-radius:10px;font-size:11px;font-weight:500}
+.badge-pending{background:#fff3e0;color:#e65100}
+.badge-received{background:#e3f2fd;color:#0d47a1}
+.badge-completed{background:#e8f5e9;color:#1b5e20}
+.badge-cancelled{background:#fce4ec;color:#880e4f}
+.bar{display:flex;align-items:center;gap:10px}
+.bar select{width:auto;padding:3px 8px;font-size:12px}
+.toolbar{display:flex;gap:4px;flex-wrap:wrap}
+.status-sel{padding:2px 6px;font-size:11px;border:1px solid #d9d9d9;border-radius:3px}
+.track-link{color:#1a73e8;cursor:pointer;text-decoration:none}
+.track-link:hover{text-decoration:underline}
+
+/* Modal */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);display:none;align-items:center;justify-content:center;z-index:200}
+.modal-overlay.show{display:flex}
+.modal{background:#fff;border-radius:10px;width:520px;max-width:94vw;max-height:80vh;display:flex;flex-direction:column;box-shadow:0 12px 40px rgba(0,0,0,.2)}
+.modal-hd{display:flex;justify-content:space-between;align-items:center;padding:14px 18px;border-bottom:1px solid #e8e8e8}
+.modal-hd h3{font-size:15px}
+.modal-close{width:30px;height:30px;border:none;background:none;font-size:20px;cursor:pointer;border-radius:50%;color:#999}
+.modal-close:hover{background:#f0f0f0;color:#333}
+.modal-bd{padding:16px 18px;overflow-y:auto;flex:1}
+.logi-loading{text-align:center;color:#999;padding:20px}
+.logi-error{text-align:center;color:#e53935;padding:20px}
+.logi-info{display:flex;gap:12px;margin-bottom:12px;padding:10px;background:#f8f9fa;border-radius:5px;font-size:12px}
+.logi-info div{flex:1}
+.logi-info .lbl{color:#888;font-size:11px}
+.logi-info .val{font-weight:500}
+.timeline{position:relative;padding-left:26px}
+.timeline::before{content:'';position:absolute;left:8px;top:4px;bottom:4px;width:2px;background:#e0e0e0}
+.tl-item{position:relative;margin-bottom:14px}
+.tl-item::before{content:'';position:absolute;left:-18px;top:4px;width:9px;height:9px;border-radius:50%;background:#e0e0e0;border:2px solid #fff;box-shadow:0 0 0 2px #e0e0e0}
+.tl-item:last-child::before{background:#1a73e8;box-shadow:0 0 0 2px #1a73e8}
+.tl-time{font-size:11px;color:#999}
+.tl-text{font-size:13px;margin-top:2px}
+.tl-loc{font-size:11px;color:#888;margin-top:1px}
+.toast{position:fixed;top:20px;left:50%;transform:translateX(-50%);background:#323232;color:#fff;padding:10px 24px;border-radius:6px;font-size:13px;z-index:999;display:none;box-shadow:0 4px 12px rgba(0,0,0,.3)}
+</style>
 </head>
 <body>
-  <header class="header">
-    <div class="header-inner">
-      <h1>📦 售后换货 / 退货管理系统</h1>
-      <span class="header-sub">客服工作台</span>
-    </div>
-  </header>
 
-  <main class="container">
-    <!-- 左侧：新建表单 -->
-    <section class="panel panel-form" id="formPanel">
-      <div class="panel-header">
-        <h2>📋 新建退换货单</h2>
-      </div>
-      <form id="returnForm">
-        <div class="form-row">
-          <div class="form-group half">
-            <label>订单号 <span class="req">*</span></label>
-            <input type="text" id="orderId" placeholder="如：DD20240618001" required>
+<div class="toast" id="toast"></div>
+
+<!-- 登录页 -->
+<div class="login-wrap" id="loginPage">
+  <div class="login-box">
+    <h2>🔐 售后管理系统</h2>
+    <p>请输入管理密码查看后台</p>
+    <input type="password" id="adminPwd" placeholder="管理密码" onkeydown="if(event.key==='Enter')adminLogin()">
+    <button class="login-btn" onclick="adminLogin()">进入后台管理</button>
+    <div class="login-error" id="loginError">密码错误，请重试</div>
+    <p style="margin-top:16px;font-size:12px;color:#aaa">客户直接 <a href="javascript:void(0)" onclick="guestMode()" style="color:#1a73e8">提交退换货单 →</a></p>
+  </div>
+</div>
+
+<!-- 主界面 -->
+<div id="mainApp" style="display:none">
+  <div class="header" id="appHeader">
+    <h1>📦 换货退货管理系统</h1>
+    <div class="header-right" id="headerRight"></div>
+  </div>
+  <div class="guest-banner" id="guestBanner" style="display:none">👤 提交模式 — 你的数据提交后管理员可见</div>
+  <div class="container">
+    <div class="panel" id="formPanel">
+      <div class="panel-hd">📋 新建退换货单</div>
+      <div class="panel-bd">
+        <form id="frm">
+          <div class="form-row">
+            <div class="form-group"><label>订单号 <span class="req">*</span></label><input id="orderId" placeholder="如 DD20240618001" required></div>
+            <div class="form-group"><label>客户</label><input id="customer" placeholder="姓名/昵称"></div>
           </div>
-          <div class="form-group half">
-            <label>客户名称</label>
-            <input type="text" id="customer" placeholder="客户昵称 / 姓名">
+          <div class="form-group">
+            <label>类型</label>
+            <div class="radio-group">
+              <label><input type="radio" name="type" value="exchange" checked> 🔄 换货</label>
+              <label><input type="radio" name="type" value="refund"> 💰 退货退款</label>
+            </div>
           </div>
-        </div>
-
-        <div class="form-group">
-          <label>类型</label>
-          <div class="radio-group">
-            <label class="radio-label"><input type="radio" name="type" value="exchange" checked> 🔄 换货</label>
-            <label class="radio-label"><input type="radio" name="type" value="refund"> 💰 退货退款</label>
+          <div class="form-group">
+            <label>退回快递</label>
+            <div class="carrier-row">
+              <select id="carrier"></select>
+              <input id="trackingNo" placeholder="运单号">
+              <button type="button" class="btn btn-sm btn-outline" onclick="handleQuery()">🔍</button>
+            </div>
           </div>
-        </div>
-
-        <div class="form-group">
-          <label>退回快递</label>
-          <div class="carrier-select-row">
-            <select id="carrier">
-              <option value="">— 选择快递公司 —</option>
-            </select>
-            <input type="text" id="trackingNo" placeholder="填入退回运单号">
-            <button type="button" id="queryBtn" class="btn btn-sm btn-outline">🔍 查询物流</button>
+          <div class="form-group">
+            <label>退回原因</label>
+            <div class="chips" id="chips"></div>
+            <textarea id="reason" rows="2" placeholder="详细原因..."></textarea>
           </div>
-        </div>
-
-        <div class="form-group">
-          <label>退回原因</label>
-          <div class="reason-presets">
-            <button type="button" class="chip" data-reason="尺码不合适">尺码不合适</button>
-            <button type="button" class="chip" data-reason="质量问题">质量问题</button>
-            <button type="button" class="chip" data-reason="发错货">发错货</button>
-            <button type="button" class="chip" data-reason="颜色/款式不符">颜色/款式不符</button>
-            <button type="button" class="chip" data-reason="7天无理由">7天无理由</button>
-            <button type="button" class="chip" data-reason="商品破损">商品破损</button>
+          <div class="form-group"><label>客服备注</label><textarea id="note" rows="2" placeholder="内部备注"></textarea></div>
+          <div class="form-actions">
+            <button type="submit" class="btn btn-primary">✅ 提交</button>
+            <button type="reset" class="btn btn-outline" onclick="resetForm()">清空</button>
           </div>
-          <textarea id="reason" rows="2" placeholder="详细描述退回原因..."></textarea>
-        </div>
-
-        <div class="form-group">
-          <label>客服备注</label>
-          <textarea id="note" rows="2" placeholder="内部备注（客户看不到）"></textarea>
-        </div>
-
-        <div class="form-actions">
-          <button type="submit" class="btn btn-primary">✅ 提交退换货单</button>
-          <button type="reset" class="btn btn-secondary">清空</button>
-        </div>
-      </form>
-    </section>
-
-    <!-- 右侧：物流查询弹窗 -->
-    <div class="modal-overlay hidden" id="logisticsModal">
-      <div class="modal">
-        <div class="modal-header">
-          <h3>🚚 物流跟踪</h3>
-          <button class="modal-close" onclick="closeLogistics()">&times;</button>
-        </div>
-        <div class="modal-body" id="logisticsBody">
-          <div class="logistics-loading">查询中...</div>
-        </div>
+        </form>
       </div>
     </div>
-
-    <!-- 下方：退换货列表 -->
-    <section class="panel panel-list">
-      <div class="panel-header">
-        <h2>📄 退换货列表</h2>
-        <div class="list-toolbar">
-          <select id="filterStatus" onchange="loadList()">
-            <option value="">全部状态</option>
+    <div class="panel" id="adminPanel">
+      <div class="panel-hd">
+        <span>📄 退换货列表</span>
+        <div class="bar">
+          <select id="filter" onchange="render()">
+            <option value="">全部</option>
             <option value="pending">待处理</option>
             <option value="received">已收到</option>
             <option value="completed">已完成</option>
             <option value="cancelled">已取消</option>
           </select>
-          <span class="badge" id="countBadge">0 条</span>
+          <span id="count" style="font-weight:400;font-size:12px;color:#888"></span>
         </div>
       </div>
-      <div class="table-wrapper">
-        <table id="returnTable">
-          <thead>
-            <tr>
-              <th>#</th>
-              <th>订单号</th>
-              <th>类型</th>
-              <th>退回快递</th>
-              <th>运单号 <span style="cursor:pointer" onclick="trackAllVisible()">🔍</span></th>
-              <th>原因</th>
-              <th>状态</th>
-              <th>创建时间</th>
-              <th>操作</th>
-            </tr>
-          </thead>
-          <tbody id="tableBody">
-            <tr><td colspan="9" class="empty">暂无数据</td></tr>
-          </tbody>
-        </table>
+      <div class="panel-bd" style="padding:0">
+        <div class="table-wrap">
+          <table>
+            <thead><tr>
+              <th>#</th><th>订单号</th><th>类型</th><th>快递</th><th>运单号</th><th>原因</th><th>状态</th><th>时间</th><th>操作</th>
+            </tr></thead>
+            <tbody id="tbody"></tbody>
+          </table>
+        </div>
       </div>
-    </section>
-  </main>
+    </div>
+  </div>
+</div>
 
-  <script src="app.js"></script>
+<!-- 物流弹窗 -->
+<div class="modal-overlay" id="logiModal">
+  <div class="modal">
+    <div class="modal-hd"><h3>🚚 物流跟踪</h3><button class="modal-close" onclick="closeLogistics()">&times;</button></div>
+    <div class="modal-bd" id="logiBody"><div class="logi-loading">⌛ 查询中...</div></div>
+  </div>
+</div>
+
+<script>
+const ADMIN_PWD = 'admin123';  // ← 管理密码，你可以改
+const REASONS = ['尺码不合适','质量问题','发错货','颜色不符','7天无理由','商品破损','不喜欢','其他'];
+const CARRIERS = [
+  {code:'shunfeng',name:'顺丰速运'},{code:'shentong',name:'申通快递'},{code:'yuantong',name:'圆通速递'},
+  {code:'zhongtong',name:'中通快递'},{code:'yunda',name:'韵达快递'},{code:'jingdong',name:'京东快递'},
+  {code:'ems',name:'EMS'},{code:'youzhengguonei',name:'邮政国内'},{code:'debangwuliu',name:'德邦物流'},
+  {code:'huitongkuaidi',name:'百世快递'},{code:'zhaijisong',name:'宅急送'},{code:'tiantian',name:'天天快递'},
+  {code:'youshuwuliu',name:'优速快递'},{code:'suer',name:'速尔快递'},{code:'jd',name:'京东物流'}
+];
+const STATUS = {pending:'待处理',received:'已收到',completed:'已完成',cancelled:'已取消'};
+const TYPE = {exchange:'🔄 换货',refund:'💰 退款'};
+
+let isAdmin = false;
+let data = [];
+let editingId = null;
+
+// ─── 登录 ──────────────────────────────────────────────────
+function adminLogin(){
+  const pwd = document.getElementById('adminPwd').value;
+  fetch('/api/auth',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({password:pwd})})
+  .then(r=>r.json()).then(r=>{
+    if(r.ok){ isAdmin=true; enterApp(true); }
+    else document.getElementById('loginError').style.display='block';
+  }).catch(()=>{
+    // 后端密码检查失败时的本地兜底
+    if(pwd===ADMIN_PWD){ isAdmin=true; enterApp(true); }
+    else document.getElementById('loginError').style.display='block';
+  });
+}
+function guestMode(){ isAdmin=false; enterApp(false); }
+function enterApp(admin){
+  document.getElementById('loginPage').style.display='none';
+  document.getElementById('mainApp').style.display='block';
+  const hr=document.getElementById('headerRight');
+  if(admin){
+    document.getElementById('guestBanner').style.display='none';
+    document.getElementById('adminPanel').style.display='block';
+    hr.innerHTML=`<span class="role">🔑 管理员</span><button class="logout-btn" onclick="logout()">退出</button>`;
+    loadData();
+  } else {
+    document.getElementById('guestBanner').style.display='block';
+    document.getElementById('adminPanel').style.display='none';
+    hr.innerHTML=`<span class="role">👤 提交模式</span>`;
+  }
+}
+function logout(){
+  isAdmin=false;
+  document.getElementById('mainApp').style.display='none';
+  document.getElementById('loginPage').style.display='flex';
+  document.getElementById('adminPwd').value='';
+  document.getElementById('loginError').style.display='none';
+}
+
+// ─── 数据 ──────────────────────────────────────────────────
+function loadData(){
+  fetch('/api/returns').then(r=>r.json()).then(d=>{ data=d; render(); }).catch(()=>{});
+}
+function saveData(){ /* server handles it */ }
+
+// ─── 初始化 ────────────────────────────────────────────────
+function init(){
+  const sel=document.getElementById('carrier');
+  sel.innerHTML='<option value="">— 选择 —</option>';
+  const tops=['shunfeng','shentong','yuantong','zhongtong','yunda','jingdong','ems'];
+  tops.forEach(c=>{ const x=CARRIERS.find(a=>a.code===c); if(x) sel.innerHTML+=`<option value="${x.code}">${x.name}</option>`; });
+  sel.innerHTML+='<option disabled>──────────</option>';
+  CARRIERS.forEach(c=>{ if(!tops.includes(c.code)) sel.innerHTML+=`<option value="${c.code}">${c.name}</option>`; });
+  const ce=document.getElementById('chips');
+  REASONS.forEach(r=>{ const b=document.createElement('button'); b.type='button'; b.className='chip'; b.textContent=r; b.onclick=()=>{ const ta=document.getElementById('reason'); ta.value=ta.value?ta.value+'；'+r:r; ta.focus(); }; ce.appendChild(b); });
+  document.getElementById('frm').addEventListener('submit', handleSubmit);
+  // 直接显示登录页
+}
+init();
+
+// ─── CRUD ───────────────────────────────────────────────────
+function handleSubmit(e){
+  e.preventDefault();
+  const orderId=document.getElementById('orderId').value.trim();
+  if(!orderId) return toast('订单号不能为空');
+  const body={
+    order_id: orderId,
+    customer: document.getElementById('customer').value.trim(),
+    type: document.querySelector('input[name="type"]:checked').value,
+    carrier: document.getElementById('carrier').value,
+    tracking_no: document.getElementById('trackingNo').value.trim(),
+    reason: document.getElementById('reason').value.trim(),
+    note: document.getElementById('note').value.trim(),
+  };
+  const url = editingId ? `/api/returns/${editingId}` : '/api/returns';
+  const method = editingId ? 'PUT' : 'POST';
+  fetch(url,{method,headers:{'Content-Type':'application/json'},body:JSON.stringify(body)})
+  .then(r=>r.json()).then(r=>{
+    if(r.error) return toast('❌ '+r.error);
+    resetForm();
+    if(isAdmin) loadData();
+    toast('✅ 提交成功！');
+  }).catch(()=>toast('❌ 提交失败，请重试'));
+}
+
+function resetForm(){ editingId=null; document.getElementById('frm').reset(); document.getElementById('orderId').focus(); }
+
+function editItem(id){
+  if(!isAdmin) return;
+  const item=data.find(d=>d.id===id);
+  if(!item) return;
+  editingId=id;
+  document.getElementById('orderId').value=item.order_id;
+  document.getElementById('customer').value=item.customer;
+  document.querySelector(`input[name="type"][value="${item.type}"]`).checked=true;
+  document.getElementById('carrier').value=item.carrier;
+  document.getElementById('trackingNo').value=item.tracking_no;
+  document.getElementById('reason').value=item.reason;
+  document.getElementById('note').value=item.note;
+  document.getElementById('formPanel').scrollIntoView({behavior:'smooth'});
+}
+function setStatus(id, status){
+  if(!status||!isAdmin) return;
+  fetch(`/api/returns/${id}`,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({status})})
+  .then(r=>r.json()).then(r=>{ if(r.ok) loadData(); });
+}
+
+// ─── 渲染 ───────────────────────────────────────────────────
+function render(){
+  const filter=document.getElementById('filter').value;
+  let list=filter?data.filter(d=>d.status===filter):data;
+  const tbody=document.getElementById('tbody');
+  if(!list.length){
+    tbody.innerHTML='<tr><td colspan="9" class="empty">暂无数据</td></tr>';
+    document.getElementById('count').textContent='0 条'; return;
+  }
+  document.getElementById('count').textContent=`${list.length} 条`;
+  tbody.innerHTML=list.map(item=>{
+    const c=CARRIERS.find(x=>x.code===item.carrier);
+    return `<tr>
+      <td>${item.id}</td><td><strong>${item.order_id}</strong></td>
+      <td>${TYPE[item.type]||item.type}</td>
+      <td>${c?c.name:item.carrier||'—'}</td>
+      <td>${item.tracking_no?`<a class="track-link" onclick="queryLogistics('${item.carrier}','${item.tracking_no}')">🔍 ${item.tracking_no}</a>`:'—'}</td>
+      <td style="max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${item.reason}">${item.reason||'—'}</td>
+      <td><span class="badge badge-${item.status}">${STATUS[item.status]||item.status}</span></td>
+      <td style="white-space:nowrap;font-size:11px">${item.created_at}</td>
+      <td><div class="toolbar">
+        <button class="btn btn-sm btn-outline" onclick="editItem(${item.id})">✏️</button>
+        <select class="status-sel" onchange="setStatus(${item.id},this.value)"><option value="">状态</option>
+          <option value="pending">待处理</option><option value="received">已收到</option>
+          <option value="completed">已完成</option><option value="cancelled">已取消</option></select>
+      </div></td>
+    </tr>`;
+  }).join('');
+}
+
+// ─── 物流 ──────────────────────────────────────────────────
+function handleQuery(){
+  const carrier=document.getElementById('carrier').value;
+  const no=document.getElementById('trackingNo').value.trim();
+  if(!carrier||!no) return toast('请选择快递并填写运单号');
+  queryLogistics(carrier,no);
+}
+async function queryLogistics(carrier, trackingNo){
+  const modal=document.getElementById('logiModal');
+  const body=document.getElementById('logiBody');
+  modal.classList.add('show');
+  body.innerHTML='<div class="logi-loading">🔍 正在查询物流...</div>';
+  try{
+    const resp = await Promise.race([
+      fetch(`/api/logistics/${carrier}/${trackingNo}`),
+      new Promise((_,reject) => setTimeout(() => reject(new Error('timeout')), 15000))
+    ]);
+    const data = await resp.json();
+    if(data.error||!data.updates||!data.updates.length){
+      body.innerHTML=`<div class="logi-error">❌ ${data.error||'暂未查询到物流信息'}</div>`; return;
+    }
+    let html=`<div class="logi-info"><div><div class="lbl">状态</div><div class="val">${data.statusText}</div></div><div><div class="lbl">运单号</div><div class="val">${data.trackingNo}</div></div></div><div class="timeline">`;
+    data.updates.forEach(d=>{html+=`<div class="tl-item"><div class="tl-time">${d.time}</div><div class="tl-text">${d.context}</div>${d.location?`<div class="tl-loc">📍 ${d.location}</div>`:''}</div>`;});
+    html+='</div>';
+    body.innerHTML=html;
+  }catch(e){
+    body.innerHTML='<div class="logi-error">❌ 查询超时，请稍后重试</div>';
+  }
+}
+function closeLogistics(){ document.getElementById('logiModal').classList.remove('show'); }
+document.getElementById('logiModal').addEventListener('click',e=>{ if(e.target===e.currentTarget) closeLogistics(); });
+
+// ─── Toast ──────────────────────────────────────────────────
+function toast(msg){
+  const el=document.getElementById('toast');
+  el.textContent=msg; el.style.display='block';
+  clearTimeout(el._timer); el._timer=setTimeout(()=>{el.style.display='none';},2500);
+}
+</script>
 </body>
 </html>

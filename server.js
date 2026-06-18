@@ -91,7 +91,15 @@ const CARRIERS = [
 ];
 
 // ─── API ───────────────────────────────────────────────────
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'admin123';
+
 app.get('/api/carriers', (req, res) => res.json(CARRIERS));
+
+// 管理员验证
+app.post('/api/auth', (req, res) => {
+  const { password } = req.body;
+  res.json({ ok: password === ADMIN_PASSWORD });
+});
 
 // 健康检查（Zeabur 会定期检查）
 app.get('/health', (req, res) => res.json({ status: 'ok', db: fs.existsSync(DB_PATH) }));
