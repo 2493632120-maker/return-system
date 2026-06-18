@@ -164,6 +164,23 @@ tbody tr:hover{background:#f8fbff}
         </form>
       </div>
     </div>
+
+    <!-- 客户查询进度 -->
+    <div class="panel" id="lookupPanel">
+      <div class="panel-hd">🔍 查询退换货进度</div>
+      <div class="panel-bd">
+        <div class="form-row">
+          <div class="form-group" style="flex:1">
+            <input id="lookupOrderId" placeholder="输入订单号查询进度" onkeydown="if(event.key==='Enter')lookupOrder()">
+          </div>
+          <div style="padding-top:1px">
+            <button class="btn btn-primary" onclick="lookupOrder()">查询</button>
+          </div>
+        </div>
+        <div id="lookupResult"></div>
+      </div>
+    </div>
+
     <div class="panel" id="adminPanel">
       <div class="panel-hd">
         <span>📄 退换货列表</span>
@@ -234,6 +251,7 @@ function guestMode(){ isAdmin=false; enterApp(false); }
 function enterApp(admin){
   document.getElementById('loginPage').style.display='none';
   document.getElementById('mainApp').style.display='block';
+  document.getElementById('lookupPanel').style.display='block';
   const hr=document.getElementById('headerRight');
   if(admin){
     document.getElementById('guestBanner').style.display='none';
@@ -296,7 +314,20 @@ function handleSubmit(e){
     if(r.error) return toast('❌ '+r.error);
     resetForm();
     if(isAdmin) loadData();
-    toast('✅ 提交成功！');
+    const statusText = {pending:'待处理',received:'已收到',completed:'已完成',cancelled:'已取消'};
+    const s = r.item ? statusText[r.item.status]||r.item.status : '待处理';
+    if(!isAdmin){
+      const el = document.getElementById('lookupResult');
+      el.innerHTML = `<div style="padding:14px;background:#e8f5e9;border-radius:6px;font-size:14px">
+        <strong>✅ 提交成功！</strong><br><br>
+        📦 订单号：${orderId}<br>
+        📋 当前状态：<span class="badge badge-pending">${s}</span><br><br>
+        <span style="font-size:12px;color:#666">你可以使用上方的「查询退换货进度」功能随时查看最新状态</span>
+      </div>`;
+      document.getElementById('orderId').focus();
+    } else {
+      toast('✅ 提交成功！');
+    }
   }).catch(()=>toast('❌ 提交失败，请重试'));
 }
 
@@ -359,6 +390,36 @@ function handleQuery(){
   if(!carrier||!no) return toast('请选择快递并填写运单号');
   queryLogistics(carrier,no);
 }
+// ─── 查询进度（客户查自己订单状态） ────────────────────
+async function lookupOrder(){
+  const orderId = document.getElementById('lookupOrderId').value.trim();
+  if(!orderId) return toast('请输入订单号');
+  try{
+    const resp = await fetch('/api/returns');
+    const list = await resp.json();
+    const found = list.filter(d => d.order_id.includes(orderId));
+    const el = document.getElementById('lookupResult');
+    if(!found.length){
+      el.innerHTML = '<div style="padding:12px;color:#e53935;background:#fce4ec;border-radius:5px;font-size:13px">❌ 未找到该订单号</div>';
+    } else {
+      el.innerHTML = found.map(d => {
+        const c = CARRIERS.find(x => x.code === d.carrier);
+        return `<div style="padding:10px 12px;background:#f0f7ff;border-radius:5px;margin-bottom:6px;font-size:13px">
+          <div style="font-weight:600">📦 ${d.order_id}</div>
+          <div style="margin-top:4px;color:#555">
+            退回: ${c?c.name:d.carrier||'—'} ${d.tracking_no||''}<br>
+            原因: ${d.reason||'—'}<br>
+            状态: <span class="badge badge-${d.status}">${STATUS[d.status]||d.status}</span>
+            ${d.updated_at ? '<br>更新时间: '+d.updated_at : ''}
+          </div>
+        </div>`;
+      }).join('');
+    }
+  }catch(e){
+    document.getElementById('lookupResult').innerHTML = '<div style="color:#e53935;font-size:13px">❌ 查询失败，请稍后重试</div>';
+  }
+}
+
 async function queryLogistics(carrier, trackingNo){
   const modal=document.getElementById('logiModal');
   const body=document.getElementById('logiBody');
