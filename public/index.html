@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>售后换货管理系统</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="header">
+    <div class="header-inner">
+      <h1>📦 售后换货 / 退货管理系统</h1>
+      <span class="header-sub">客服工作台</span>
+    </div>
+  </header>
+
+  <main class="container">
+    <!-- 左侧：新建表单 -->
+    <section class="panel panel-form" id="formPanel">
+      <div class="panel-header">
+        <h2>📋 新建退换货单</h2>
+      </div>
+      <form id="returnForm">
+        <div class="form-row">
+          <div class="form-group half">
+            <label>订单号 <span class="req">*</span></label>
+            <input type="text" id="orderId" placeholder="如：DD20240618001" required>
+          </div>
+          <div class="form-group half">
+            <label>客户名称</label>
+            <input type="text" id="customer" placeholder="客户昵称 / 姓名">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>类型</label>
+          <div class="radio-group">
+            <label class="radio-label"><input type="radio" name="type" value="exchange" checked> 🔄 换货</label>
+            <label class="radio-label"><input type="radio" name="type" value="refund"> 💰 退货退款</label>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>退回快递</label>
+          <div class="carrier-select-row">
+            <select id="carrier">
+              <option value="">— 选择快递公司 —</option>
+            </select>
+            <input type="text" id="trackingNo" placeholder="填入退回运单号">
+            <button type="button" id="queryBtn" class="btn btn-sm btn-outline">🔍 查询物流</button>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>退回原因</label>
+          <div class="reason-presets">
+            <button type="button" class="chip" data-reason="尺码不合适">尺码不合适</button>
+            <button type="button" class="chip" data-reason="质量问题">质量问题</button>
+            <button type="button" class="chip" data-reason="发错货">发错货</button>
+            <button type="button" class="chip" data-reason="颜色/款式不符">颜色/款式不符</button>
+            <button type="button" class="chip" data-reason="7天无理由">7天无理由</button>
+            <button type="button" class="chip" data-reason="商品破损">商品破损</button>
+          </div>
+          <textarea id="reason" rows="2" placeholder="详细描述退回原因..."></textarea>
+        </div>
+
+        <div class="form-group">
+          <label>客服备注</label>
+          <textarea id="note" rows="2" placeholder="内部备注（客户看不到）"></textarea>
+        </div>
+
+        <div class="form-actions">
+          <button type="submit" class="btn btn-primary">✅ 提交退换货单</button>
+          <button type="reset" class="btn btn-secondary">清空</button>
+        </div>
+      </form>
+    </section>
+
+    <!-- 右侧：物流查询弹窗 -->
+    <div class="modal-overlay hidden" id="logisticsModal">
+      <div class="modal">
+        <div class="modal-header">
+          <h3>🚚 物流跟踪</h3>
+          <button class="modal-close" onclick="closeLogistics()">&times;</button>
+        </div>
+        <div class="modal-body" id="logisticsBody">
+          <div class="logistics-loading">查询中...</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 下方：退换货列表 -->
+    <section class="panel panel-list">
+      <div class="panel-header">
+        <h2>📄 退换货列表</h2>
+        <div class="list-toolbar">
+          <select id="filterStatus" onchange="loadList()">
+            <option value="">全部状态</option>
+            <option value="pending">待处理</option>
+            <option value="received">已收到</option>
+            <option value="completed">已完成</option>
+            <option value="cancelled">已取消</option>
+          </select>
+          <span class="badge" id="countBadge">0 条</span>
+        </div>
+      </div>
+      <div class="table-wrapper">
+        <table id="returnTable">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>订单号</th>
+              <th>类型</th>
+              <th>退回快递</th>
+              <th>运单号 <span style="cursor:pointer" onclick="trackAllVisible()">🔍</span></th>
+              <th>原因</th>
+              <th>状态</th>
+              <th>创建时间</th>
+              <th>操作</th>
+            </tr>
+          </thead>
+          <tbody id="tableBody">
+            <tr><td colspan="9" class="empty">暂无数据</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>
