@@ -52,10 +52,15 @@ async function initDb() {
       reason      TEXT NOT NULL DEFAULT '',
       status      TEXT NOT NULL DEFAULT 'pending',
       note        TEXT NOT NULL DEFAULT '',
+      sent_carrier TEXT NOT NULL DEFAULT '',
+      sent_tracking_no TEXT NOT NULL DEFAULT '',
       created_at  DATETIME DEFAULT (datetime('now','localtime')),
       updated_at  DATETIME DEFAULT (datetime('now','localtime'))
     )
   `);
+  // 数据库迁移：添加寄回单号字段
+  try { db.run('ALTER TABLE returns ADD COLUMN sent_carrier TEXT NOT NULL DEFAULT ""'); } catch(e) {}
+  try { db.run('ALTER TABLE returns ADD COLUMN sent_tracking_no TEXT NOT NULL DEFAULT ""'); } catch(e) {}
   saveDb();
 }
 
@@ -131,11 +136,11 @@ app.get('/api/logistics/:carrier/:trackingNo', async (req, res) => {
 });
 
 app.post('/api/returns', (req, res) => {
-  const { order_id, customer, type, carrier, tracking_no, reason, note } = req.body;
+  const { order_id, customer, type, carrier, tracking_no, reason, note, sent_carrier, sent_tracking_no } = req.body;
   if (!order_id) return res.status(400).json({ error: '订单号不能为空' });
   run(
-    `INSERT INTO returns (order_id, customer, type, carrier, tracking_no, reason, note) VALUES (?, ?, ?, ?, ?, ?, ?)`,
-    [order_id, customer || '', type || 'exchange', carrier || '', tracking_no || '', reason || '', note || '']
+    `INSERT INTO returns (order_id, customer, type, carrier, tracking_no, reason, note, sent_carrier, sent_tracking_no) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    [order_id, customer || '', type || 'exchange', carrier || '', tracking_no || '', reason || '', note || '', sent_carrier || '', sent_tracking_no || '']
   );
   const item = firstRow('SELECT * FROM returns WHERE id = (SELECT MAX(id) FROM returns)');
   res.json({ ok: true, item });
@@ -147,13 +152,15 @@ app.get('/api/returns', (req, res) => {
 
 app.put('/api/returns/:id', (req, res) => {
   const { id } = req.params;
-  const { carrier, tracking_no, reason, status, note } = req.body;
+  const { carrier, tracking_no, reason, status, note, sent_carrier, sent_tracking_no } = req.body;
   const fields = []; const values = [];
   if (carrier !== undefined) { fields.push('carrier = ?'); values.push(carrier); }
   if (tracking_no !== undefined) { fields.push('tracking_no = ?'); values.push(tracking_no); }
   if (reason !== undefined) { fields.push('reason = ?'); values.push(reason); }
   if (status !== undefined) { fields.push('status = ?'); values.push(status); }
   if (note !== undefined) { fields.push('note = ?'); values.push(note); }
+  if (sent_carrier !== undefined) { fields.push('sent_carrier = ?'); values.push(sent_carrier); }
+  if (sent_tracking_no !== undefined) { fields.push('sent_tracking_no = ?'); values.push(sent_tracking_no); }
   if (fields.length === 0) return res.status(400).json({ error: '没有需要更新的字段' });
   fields.push("updated_at = datetime('now','localtime')");
   values.push(id);

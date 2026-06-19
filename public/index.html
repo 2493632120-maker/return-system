@@ -160,6 +160,13 @@ tbody tr:hover{background:#f8fbff}
             <div class="chips" id="chips"></div>
             <textarea id="reason" rows="2" placeholder="详细原因..."></textarea>
           </div>
+          <div class="form-group" id="sentFields" style="display:none">
+            <label style="color:#1a73e8;font-weight:600">📦 寄回给客户（管理员填写）</label>
+            <div class="carrier-row">
+              <select id="sentCarrier"></select>
+              <input id="sentTrackingNo" placeholder="寄回运单号">
+            </div>
+          </div>
           <div class="form-group"><label>客服备注</label><textarea id="note" rows="2" placeholder="内部备注"></textarea></div>
           <div class="form-actions">
             <button type="submit" class="btn btn-primary">✅ 提交</button>
@@ -186,7 +193,7 @@ tbody tr:hover{background:#f8fbff}
         <div class="table-wrap">
           <table>
             <thead><tr>
-              <th>#</th><th>订单号</th><th>类型</th><th>快递</th><th>运单号</th><th>原因</th><th>状态</th><th>时间</th><th>操作</th>
+              <th>#</th><th>订单号</th><th>类型</th><th>退回快递</th><th>退回单号</th><th>寄回单号</th><th>原因</th><th>状态</th><th>时间</th><th>操作</th>
             </tr></thead>
             <tbody id="tbody"></tbody>
           </table>
@@ -299,6 +306,13 @@ function init(){
   tops.forEach(c=>{ const x=CARRIERS.find(a=>a.code===c); if(x) sel.innerHTML+=`<option value="${x.code}">${x.name}</option>`; });
   sel.innerHTML+='<option disabled>──────────</option>';
   CARRIERS.forEach(c=>{ if(!tops.includes(c.code)) sel.innerHTML+=`<option value="${c.code}">${c.name}</option>`; });
+  // 初始化寄回快递下拉
+  const ssel=document.getElementById('sentCarrier');
+  ssel.innerHTML='<option value="">— 选择寄回快递 —</option>';
+  tops.forEach(c=>{ const x=CARRIERS.find(a=>a.code===c); if(x) ssel.innerHTML+=`<option value="${x.code}">${x.name}</option>`; });
+  ssel.innerHTML+='<option disabled>──────────</option>';
+  CARRIERS.forEach(c=>{ if(!tops.includes(c.code)) ssel.innerHTML+=`<option value="${c.code}">${c.name}</option>`; });
+
   const ce=document.getElementById('chips');
   REASONS.forEach(r=>{ const b=document.createElement('button'); b.type='button'; b.className='chip'; b.textContent=r; b.onclick=()=>{ const ta=document.getElementById('reason'); ta.value=ta.value?ta.value+'；'+r:r; ta.focus(); }; ce.appendChild(b); });
   document.getElementById('frm').addEventListener('submit', handleSubmit);
@@ -319,6 +333,8 @@ function handleSubmit(e){
     tracking_no: document.getElementById('trackingNo').value.trim(),
     reason: document.getElementById('reason').value.trim(),
     note: document.getElementById('note').value.trim(),
+    sent_carrier: document.getElementById('sentCarrier').value,
+    sent_tracking_no: document.getElementById('sentTrackingNo').value.trim(),
   };
   const url = editingId ? `/api/returns/${editingId}` : '/api/returns';
   const method = editingId ? 'PUT' : 'POST';
@@ -344,13 +360,14 @@ function handleSubmit(e){
   }).catch(()=>toast('❌ 提交失败，请重试'));
 }
 
-function resetForm(){ editingId=null; document.getElementById('frm').reset(); document.getElementById('orderId').focus(); }
+function resetForm(){ editingId=null; document.getElementById('frm').reset(); document.getElementById('orderId').focus(); document.getElementById('sentFields').style.display='none'; }
 
 function editItem(id){
   if(!isAdmin) return;
   const item=data.find(d=>d.id===id);
   if(!item) return;
   editingId=id;
+  document.getElementById('sentFields').style.display='block';
   document.getElementById('orderId').value=item.order_id;
   document.getElementById('customer').value=item.customer;
   document.querySelector(`input[name="type"][value="${item.type}"]`).checked=true;
@@ -358,6 +375,8 @@ function editItem(id){
   document.getElementById('trackingNo').value=item.tracking_no;
   document.getElementById('reason').value=item.reason;
   document.getElementById('note').value=item.note;
+  document.getElementById('sentCarrier').value=item.sent_carrier||'';
+  document.getElementById('sentTrackingNo').value=item.sent_tracking_no||'';
   document.getElementById('formPanel').scrollIntoView({behavior:'smooth'});
 }
 function setStatus(id, status){
@@ -379,7 +398,7 @@ function render(){
   let list=filter?data.filter(d=>d.status===filter):data;
   const tbody=document.getElementById('tbody');
   if(!list.length){
-    tbody.innerHTML='<tr><td colspan="9" class="empty">暂无数据</td></tr>';
+    tbody.innerHTML='<tr><td colspan="10" class="empty">暂无数据</td></tr>';
     document.getElementById('count').textContent='0 条'; return;
   }
   document.getElementById('count').textContent=`${list.length} 条`;
@@ -389,7 +408,8 @@ function render(){
       <td>${item.id}</td><td><strong>${item.order_id}</strong></td>
       <td>${TYPE[item.type]||item.type}</td>
       <td>${c?c.name:item.carrier||'—'}</td>
-      <td>${item.tracking_no?`<a class="track-link" onclick="queryLogistics('${item.carrier}','${item.tracking_no}')">🔍 ${item.tracking_no}</a>`:'—'}</td>
+      <td>${item.tracking_no?`<a class="track-link" onclick="queryLogistics('${item.carrier}','${item.tracking_no}')">🔙 ${item.tracking_no}</a>`:'—'}</td>
+      <td>${item.sent_tracking_no?`<a class="track-link" onclick="queryLogistics('${item.sent_carrier||'shunfeng'}','${item.sent_tracking_no}')">📦 ${item.sent_tracking_no}</a>`:'—'}</td>
       <td style="max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${item.reason}">${item.reason||'—'}</td>
       <td><span class="badge badge-${item.status}">${STATUS[item.status]||item.status}</span></td>
       <td style="white-space:nowrap;font-size:11px">${item.created_at}</td>
@@ -419,17 +439,19 @@ async function lookupOrder(){
     const resp = await fetch('/api/returns');
     const list = await resp.json();
     // 同时按订单号和运单号查询
-    const found = list.filter(d => d.order_id.includes(orderId) || d.tracking_no.includes(orderId));
+    const found = list.filter(d => d.order_id.includes(orderId) || d.tracking_no.includes(orderId) || d.sent_tracking_no.includes(orderId));
     const el = document.getElementById('lookupResult');
     if(!found.length){
       el.innerHTML = '<div style="padding:12px;color:#e53935;background:#fce4ec;border-radius:5px;font-size:13px">❌ 未找到记录，请检查单号</div>';
     } else {
       el.innerHTML = found.map(d => {
         const c = CARRIERS.find(x => x.code === d.carrier);
+        const sc = CARRIERS.find(x => x.code === d.sent_carrier);
         return `<div style="padding:10px 12px;background:#f0f7ff;border-radius:5px;margin-bottom:6px;font-size:13px">
           <div style="font-weight:600">📦 ${d.order_id}</div>
           <div style="margin-top:4px;color:#555">
-            退回: ${c?c.name:d.carrier||'—'} ${d.tracking_no||''}<br>
+            🔙 退回: ${c?c.name:d.carrier||'—'} ${d.tracking_no||''}<br>
+            ${d.sent_tracking_no ? '📦 寄回: '+ (sc?sc.name:d.sent_carrier||'—') +' '+ d.sent_tracking_no +'<br>' : ''}
             原因: ${d.reason||'—'}<br>
             状态: <span class="badge badge-${d.status}">${STATUS[d.status]||d.status}</span>
             ${d.updated_at ? '<br>更新时间: '+d.updated_at : ''}
