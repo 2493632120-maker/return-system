@@ -16,6 +16,10 @@ app.use(cors());
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
+// ─── 路由：客户提交页 / 管理员页 ────────────────────────────
+app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'public', 'submit.html')));
+app.get('/admin', (req, res) => res.sendFile(path.join(__dirname, 'public', 'index.html')));
+
 // ─── 数据库初始化 ──────────────────────────────────────────
 let db;
 
