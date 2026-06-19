@@ -169,11 +169,14 @@ app.get('/api/returns', (req, res) => {
   res.json(allRows('SELECT * FROM returns ORDER BY created_at DESC'));
 });
 
-app.put('/api/returns/:id', (req, res) => {
+const { order_id, customer, type, carrier, tracking_no, reason, status, note, sent_carrier, sent_tracking_no, image } = req.body;
   const { id } = req.params;
   const { carrier, tracking_no, reason, status, note, sent_carrier, sent_tracking_no, image } = req.body;
   const fields = []; const values = [];
   if (carrier !== undefined) { fields.push('carrier = ?'); values.push(carrier); }
+if (order_id !== undefined) { fields.push('order_id = ?'); values.push(order_id); }
+if (customer !== undefined) { fields.push('customer = ?'); values.push(customer); }
+if (type !== undefined) { fields.push('type = ?'); values.push(type); }
   if (tracking_no !== undefined) { fields.push('tracking_no = ?'); values.push(tracking_no); }
   if (reason !== undefined) { fields.push('reason = ?'); values.push(reason); }
   if (status !== undefined) { fields.push('status = ?'); values.push(status); }
