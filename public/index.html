@@ -31,7 +31,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'PingFang SC','Microsoft YaHei
 .header-right .logout-btn:hover{background:rgba(255,255,255,.25)}
 
 .container{max-width:800px;margin:0 auto;padding:16px}
-.body-wrap{display:grid;grid-template-columns:380px 1fr;gap:16px;align-items:start}
+.body-wrap{display:grid;grid-template-columns:380px 1fr;gap:16px;align-items:stretch}
+.body-wrap .panel:nth-child(2){min-height:300px}
 @media(max-width:800px){.body-wrap{grid-template-columns:1fr}}
 
 .panel{background:#fff;border-radius:8px;box-shadow:0 1px 3px rgba(0,0,0,.08);overflow:hidden}
@@ -248,6 +249,14 @@ function adminLogin(){
     if(pwd===ADMIN_PWD){ isAdmin=true; enterApp(true); }
     else document.getElementById('loginError').style.display='block';
   });
+}
+function toggleLookup(){
+  const body=document.getElementById('lookupBody');
+  const toggle=document.getElementById('lookupToggle');
+  if(!body) return;
+  const isHidden = body.style.display==='none' || !body.style.display;
+  body.style.display = isHidden ? 'block' : 'none';
+  if(toggle) toggle.textContent = isHidden ? '收起 ▲' : '展开 ▼';
 }
 function guestMode(){ isAdmin=false; enterApp(false); }
 function enterApp(admin){
