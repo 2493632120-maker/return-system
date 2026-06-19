@@ -32,7 +32,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'PingFang SC','Microsoft YaHei
 
 .container{max-width:800px;margin:0 auto;padding:16px}
 .body-wrap{display:grid;grid-template-columns:380px 1fr;gap:16px;align-items:stretch}
-.body-wrap .panel:nth-child(2){min-height:300px}
+.body-wrap .panel:nth-child(2){min-height:350px}
+.lookup-wrap{margin-top:16px}
 @media(max-width:800px){.body-wrap{grid-template-columns:1fr}}
 
 .panel{background:#fff;border-radius:8px;box-shadow:0 1px 3px rgba(0,0,0,.08);overflow:hidden}
@@ -130,6 +131,7 @@ tbody tr:hover{background:#f8fbff}
   </div>
   <div class="guest-banner" id="guestBanner" style="display:none">👤 提交模式 — 你的数据提交后管理员可见</div>
   <div class="container">
+    <div class="body-wrap">
     <div class="panel" id="formPanel">
       <div class="panel-hd">📋 新建退换货单</div>
       <div class="panel-bd">
@@ -166,24 +168,6 @@ tbody tr:hover{background:#f8fbff}
         </form>
       </div>
     </div>
-
-    <div class="body-wrap">
-
-    <!-- 客户查询进度（折叠样式） -->
-    <div class="panel" id="lookupPanel" style="margin-bottom:16px">
-      <div class="panel-hd" style="cursor:pointer" onclick="toggleLookup()">
-        <span>🔍 查询退换货进度</span>
-        <span style="font-size:11px;color:#888" id="lookupToggle">展开 ▼</span>
-      </div>
-      <div class="panel-bd" id="lookupBody" style="display:none">
-        <div style="display:flex;gap:6px;margin-bottom:8px">
-          <input id="lookupOrderId" placeholder="输入订单号" style="flex:1" onkeydown="if(event.key==='Enter')lookupOrder()">
-          <button class="btn btn-primary btn-sm" onclick="lookupOrder()">查询</button>
-        </div>
-        <div id="lookupResult"></div>
-      </div>
-    </div>
-
     <div class="panel" id="adminPanel">
       <div class="panel-hd">
         <span>📄 退换货列表</span>
@@ -210,6 +194,24 @@ tbody tr:hover{background:#f8fbff}
       </div>
     </div>
   </div>
+
+  <!-- 查询进度 → 最底部 -->
+  <div class="lookup-wrap">
+  <div class="panel" id="lookupPanel">
+    <div class="panel-hd" style="cursor:pointer" onclick="toggleLookup()">
+      <span>🔍 查询退换货进度</span>
+      <span style="font-size:11px;color:#888" id="lookupToggle">展开 ▼</span>
+    </div>
+    <div class="panel-bd" id="lookupBody" style="display:none">
+      <div style="display:flex;gap:6px;margin-bottom:8px">
+        <input id="lookupOrderId" placeholder="输入订单号" style="flex:1" onkeydown="if(event.key==='Enter')lookupOrder()">
+        <button class="btn btn-primary btn-sm" onclick="lookupOrder()">查询</button>
+      </div>
+      <div id="lookupResult"></div>
+    </div>
+  </div>
+  </div>
+
 </div>
 
 <!-- 物流弹窗 -->
