@@ -190,7 +190,6 @@ app.put('/api/returns/:id', (req, res) => {
   if (image) saveImage(id, image);
   res.json({ ok: true, item: firstRow('SELECT * FROM returns WHERE id = ?', [id]) });
 });
-});
 
 app.delete('/api/returns/:id', (req, res) => {
   run('DELETE FROM returns WHERE id = ?', [req.params.id]);
