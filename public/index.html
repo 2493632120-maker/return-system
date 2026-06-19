@@ -58,6 +58,11 @@ textarea{resize:vertical}
 .btn-outline:hover{border-color:#1a73e8;color:#1a73e8}
 .btn-danger{background:#e53935;color:#fff}
 .form-actions{display:flex;gap:8px;padding-top:4px}
+/* 图片上传 */
+.photo-wrap{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.photo-wrap input[type=file]{flex:1;padding:6px;border:1px solid #d9d9d9;border-radius:5px;font-size:13px}
+.photo-preview{max-width:120px;max-height:120px;border-radius:5px;border:1px solid #ddd;cursor:pointer}
+.photo-notice{color:#e53935;font-size:13px;font-weight:600;padding:6px 10px;background:#fce4ec;border-radius:5px;margin-bottom:8px;display:flex;align-items:center;gap:6px}
 .chips{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:6px}
 .chip{padding:3px 12px;font-size:11px;border:1px solid #d9d9d9;border-radius:14px;background:#fafafa;cursor:pointer;color:#555;transition:all .15s}
 .chip:hover{border-color:#1a73e8;color:#1a73e8;background:#e8f0fe}
@@ -169,6 +174,14 @@ tbody tr:hover{background:#f8fbff}
               <input id="sentTrackingNo" placeholder="寄回运单号">
             </div>
           </div>
+          <div class="photo-notice">⚠️ 注意要拍退回商品照片</div>
+          <div class="form-group">
+            <label>上传退回商品照片</label>
+            <div class="photo-wrap">
+              <input type="file" id="photoInput" accept="image/*" onchange="previewPhoto()">
+              <img id="photoPreview" class="photo-preview" style="display:none">
+            </div>
+          </div>
           <div class="form-group"><label>客服备注</label><textarea id="note" rows="2" placeholder="内部备注"></textarea></div>
           <div class="form-actions">
             <button type="submit" class="btn btn-primary">✅ 提交</button>
@@ -195,7 +208,7 @@ tbody tr:hover{background:#f8fbff}
         <div class="table-wrap">
           <table>
             <thead><tr>
-              <th>#</th><th>订单号</th><th>类型</th><th>退回快递</th><th>退回单号</th><th>寄回单号</th><th>原因</th><th>状态</th><th>时间</th><th>操作</th>
+              <th>#</th><th>订单号</th><th>类型</th><th>退回快递</th><th>退回单号</th><th>寄回单号</th><th>照片</th><th>原因</th><th>状态</th><th>时间</th><th>操作</th>
             </tr></thead>
             <tbody id="tbody"></tbody>
           </table>
@@ -322,6 +335,35 @@ function init(){
 }
 init();
 
+// ─── 图片 ────────────────────────────────────────────────────
+function previewPhoto(){
+  const input=document.getElementById('photoInput');
+  const preview=document.getElementById('photoPreview');
+  if(input.files&&input.files[0]){
+    const reader=new FileReader();
+    reader.onload=function(e){ preview.src=e.target.result; preview.style.display='block'; };
+    reader.readAsDataURL(input.files[0]);
+  }
+}
+
+function uploadPhoto(id, callback){
+  const input=document.getElementById('photoInput');
+  if(!input.files||!input.files[0]){ if(callback) callback(); return; }
+  const reader=new FileReader();
+  reader.onload=function(e){
+    fetch('/api/upload/'+id,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({image:e.target.result})})
+    .then(r=>r.json()).then(r=>{ if(callback) callback(); }).catch(()=>{ if(callback) callback(); });
+  };
+  reader.readAsDataURL(input.files[0]);
+}
+
+function viewPhoto(id){
+  fetch('/api/photos/'+id).then(r=>r.json()).then(list=>{
+    if(list.length){ window.open(list[0].url,'_blank'); }
+    else toast('暂无照片');
+  }).catch(()=>toast('加载失败'));
+}
+
 // ─── CRUD ───────────────────────────────────────────────────
 function handleSubmit(e){
   e.preventDefault();
@@ -343,22 +385,26 @@ function handleSubmit(e){
   fetch(url,{method,headers:{'Content-Type':'application/json'},body:JSON.stringify(body)})
   .then(r=>r.json()).then(r=>{
     if(r.error) return toast('❌ '+r.error);
-    resetForm();
-    if(isAdmin) loadData();
-    const statusText = {pending:'待处理',received:'已收到',completed:'已完成',cancelled:'已取消'};
-    const s = r.item ? statusText[r.item.status]||r.item.status : '待处理';
-    if(!isAdmin){
-      const el = document.getElementById('lookupResult');
-      el.innerHTML = `<div style="padding:14px;background:#e8f5e9;border-radius:6px;font-size:14px">
-        <strong>✅ 提交成功！</strong><br><br>
-        📦 订单号：${orderId}<br>
-        📋 当前状态：<span class="badge badge-pending">${s}</span><br><br>
-        <span style="font-size:12px;color:#666">你可以用底部的「查询退换货进度」功能，输入退回单号随时查看</span>
-      </div>`;
-      document.getElementById('orderId').focus();
-    } else {
-      toast('✅ 提交成功！');
-    }
+    const newId = r.item ? r.item.id : editingId;
+    // 上传照片
+    uploadPhoto(newId, function(){
+      resetForm();
+      if(isAdmin) loadData();
+      const statusText = {pending:'待处理',received:'已收到',completed:'已完成',cancelled:'已取消'};
+      const s = r.item ? statusText[r.item.status]||r.item.status : '待处理';
+      if(!isAdmin){
+        const el = document.getElementById('lookupResult');
+        el.innerHTML = `<div style="padding:14px;background:#e8f5e9;border-radius:6px;font-size:14px">
+          <strong>✅ 提交成功！</strong><br><br>
+          📦 订单号：${orderId}<br>
+          📋 当前状态：<span class="badge badge-pending">${s}</span><br><br>
+          <span style="font-size:12px;color:#666">你可以用底部的「查询退换货进度」功能，输入退回单号随时查看</span>
+        </div>`;
+        document.getElementById('orderId').focus();
+      } else {
+        toast('✅ 提交成功！');
+      }
+    });
   }).catch(()=>toast('❌ 提交失败，请重试'));
 }
 
@@ -400,7 +446,7 @@ function render(){
   let list=filter?data.filter(d=>d.status===filter):data;
   const tbody=document.getElementById('tbody');
   if(!list.length){
-    tbody.innerHTML='<tr><td colspan="10" class="empty">暂无数据</td></tr>';
+    tbody.innerHTML='<tr><td colspan="11" class="empty">暂无数据</td></tr>';
     document.getElementById('count').textContent='0 条'; return;
   }
   document.getElementById('count').textContent=`${list.length} 条`;
@@ -412,6 +458,7 @@ function render(){
       <td>${c?c.name:item.carrier||'—'}</td>
       <td>${item.tracking_no?`<a class="track-link" onclick="queryLogistics('${item.carrier}','${item.tracking_no}')">🔙 ${item.tracking_no}</a>`:'—'}</td>
       <td>${item.sent_tracking_no?`<a class="track-link" onclick="queryLogistics('${item.sent_carrier||'shunfeng'}','${item.sent_tracking_no}')">📦 ${item.sent_tracking_no}</a>`:'—'}</td>
+      <td><span class="track-link" onclick="viewPhoto(${item.id})">📷 查看</span></td>
       <td style="max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${item.reason}">${item.reason||'—'}</td>
       <td><span class="badge badge-${item.status}">${STATUS[item.status]||item.status}</span></td>
       <td style="white-space:nowrap;font-size:11px">${item.created_at}</td>
@@ -455,6 +502,7 @@ async function lookupOrder(){
             🔙 退回: ${c?c.name:d.carrier||'—'} ${d.tracking_no||''}<br>
             ${d.sent_tracking_no ? '📦 寄回: '+ (sc?sc.name:d.sent_carrier||'—') +' '+ d.sent_tracking_no +'<br>' : ''}
             原因: ${d.reason||'—'}<br>
+            <span class="track-link" onclick="viewPhoto(${d.id})">📷 查看退回照片</span><br>
             状态: <span class="badge badge-${d.status}">${STATUS[d.status]||d.status}</span>
             ${d.updated_at ? '<br>更新时间: '+d.updated_at : ''}
           </div>

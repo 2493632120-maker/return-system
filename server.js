@@ -177,6 +177,42 @@ app.delete('/api/returns/:id', (req, res) => {
   res.json({ ok: true });
 });
 
+// ─── 照片上传 ────────────────────────────────────────────
+const PHOTO_DIR = path.join(DB_DIR, 'photos');
+
+app.post('/api/upload/:id', (req, res) => {
+  const { id } = req.params;
+  const { image } = req.body;
+  if (!image) return res.json({ error: '无图片数据' });
+  try {
+    const dir = path.join(PHOTO_DIR, id);
+    fs.mkdirSync(dir, { recursive: true });
+    const matches = image.match(/^data:image\/(\w+);base64,(.+)$/);
+    const ext = matches ? matches[1] : 'jpg';
+    const data = matches ? matches[2] : image;
+    const filename = 'photo.' + ext;
+    fs.writeFileSync(path.join(dir, filename), Buffer.from(data, 'base64'));
+    res.json({ ok: true, url: `/api/photos/${id}/${filename}` });
+  } catch(e) {
+    res.json({ error: e.message });
+  }
+});
+
+app.get('/api/photos/:id/:filename', (req, res) => {
+  const file = path.join(PHOTO_DIR, req.params.id, req.params.filename);
+  if (fs.existsSync(file)) return res.sendFile(file);
+  res.status(404).json({ error: '未找到图片' });
+});
+
+app.get('/api/photos/:id', (req, res) => {
+  const dir = path.join(PHOTO_DIR, req.params.id);
+  if (fs.existsSync(dir)) {
+    res.json(fs.readdirSync(dir).map(f => ({ url: `/api/photos/${req.params.id}/${f}` })));
+  } else {
+    res.json([]);
+  }
+});
+
 // ─── 启动 ───────────────────────────────────────────────
 initDb().then(() => {
   app.listen(PORT, '0.0.0.0', () => {

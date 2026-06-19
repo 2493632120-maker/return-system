@@ -58,6 +58,11 @@ textarea{resize:vertical}
 .btn-outline:hover{border-color:#1a73e8;color:#1a73e8}
 .btn-danger{background:#e53935;color:#fff}
 .form-actions{display:flex;gap:8px;padding-top:4px}
+/* 图片上传 */
+.photo-wrap{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.photo-wrap input[type=file]{flex:1;padding:6px;border:1px solid #d9d9d9;border-radius:5px;font-size:13px}
+.photo-preview{max-width:120px;max-height:120px;border-radius:5px;border:1px solid #ddd;cursor:pointer}
+.photo-notice{color:#e53935;font-size:13px;font-weight:600;padding:6px 10px;background:#fce4ec;border-radius:5px;margin-bottom:8px;display:flex;align-items:center;gap:6px}
 .chips{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:6px}
 .chip{padding:3px 12px;font-size:11px;border:1px solid #d9d9d9;border-radius:14px;background:#fafafa;cursor:pointer;color:#555;transition:all .15s}
 .chip:hover{border-color:#1a73e8;color:#1a73e8;background:#e8f0fe}
@@ -157,6 +162,14 @@ tbody tr:hover{background:#f8fbff}
             <div class="carrier-row">
               <select id="sentCarrier"></select>
               <input id="sentTrackingNo" placeholder="寄回运单号">
+            </div>
+          </div>
+          <div class="photo-notice">⚠️ 注意要拍退回商品照片</div>
+          <div class="form-group">
+            <label>上传退回商品照片</label>
+            <div class="photo-wrap">
+              <input type="file" id="photoInput" accept="image/*" onchange="previewPhoto()">
+              <img id="photoPreview" class="photo-preview" style="display:none">
             </div>
           </div>
           <div class="form-group"><label>客服备注</label><textarea id="note" rows="2" placeholder="内部备注"></textarea></div>
@@ -270,6 +283,34 @@ function init(){
 init();
 
 // ─── CRUD ───────────────────────────────────────────────────
+function previewPhoto(){
+  const input=document.getElementById("photoInput");
+  const preview=document.getElementById("photoPreview");
+  if(input.filesfunction handleSubmit(e){function handleSubmit(e){input.files[0]){
+    const reader=new FileReader();
+    reader.onload=function(e){ preview.src=e.target.result; preview.style.display="block"; };
+    reader.readAsDataURL(input.files[0]);
+  }
+}
+
+function uploadPhoto(id, callback){
+  const input=document.getElementById("photoInput");
+  if(!input.files||!input.files[0]){ if(callback) callback(); return; }
+  const reader=new FileReader();
+  reader.onload=function(e){
+    fetch("/api/upload/"+id,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({image:e.target.result})})
+    .then(r=>r.json()).then(r=>{ if(callback) callback(); }).catch(()=>{ if(callback) callback(); });
+  };
+  reader.readAsDataURL(input.files[0]);
+}
+
+function viewPhoto(id){
+  fetch("/api/photos/"+id).then(r=>r.json()).then(list=>{
+    if(list.length){ window.open(list[0].url,"_blank"); }
+    else toast("暂无照片");
+  }).catch(()=>toast("加载失败"));
+}
+
 function handleSubmit(e){
   e.preventDefault();
   const orderId=document.getElementById('orderId').value.trim();
@@ -289,7 +330,9 @@ function handleSubmit(e){
   const method = editingId ? 'PUT' : 'POST';
   fetch(url,{method,headers:{'Content-Type':'application/json'},body:JSON.stringify(body)})
   .then(r=>r.json()).then(r=>{
-    if(r.error) return toast('❌ '+r.error);
+        const newId = r.item ? r.item.id : editingId;
+    uploadPhoto(newId, function(){
+      if(r.error) return toast('❌ '+r.error);
     resetForm();
     if(isAdmin) loadData();
     const statusText = {pending:'待处理',received:'已收到',completed:'已完成',cancelled:'已取消'};
@@ -304,7 +347,8 @@ function handleSubmit(e){
       </div>`;
       document.getElementById('orderId').focus();
     } else {
-      toast('✅ 提交成功！');
+      toast("✅ 提交成功！");
+    }););
     }
   }).catch(()=>toast('❌ 提交失败，请重试'));
 }
