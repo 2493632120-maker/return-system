@@ -105,7 +105,9 @@ tbody tr:hover{background:#f8fbff}
 .timeline::before{content:'';position:absolute;left:8px;top:4px;bottom:4px;width:2px;background:#e0e0e0}
 .tl-item{position:relative;margin-bottom:14px}
 .tl-item::before{content:'';position:absolute;left:-18px;top:4px;width:9px;height:9px;border-radius:50%;background:#e0e0e0;border:2px solid #fff;box-shadow:0 0 0 2px #e0e0e0}
-.tl-item:last-child::before{background:#1a73e8;box-shadow:0 0 0 2px #1a73e8}
+.tl-item:last-child::before{background:#e0e0e0;box-shadow:0 0 0 2px #e0e0e0}
+.tl-latest::before{background:#1a73e8!important;box-shadow:0 0 0 2px #1a73e8!important}
+.tl-latest .tl-text{font-weight:600;color:#1a73e8}
 .tl-time{font-size:11px;color:#999}
 .tl-text{font-size:13px;margin-top:2px}
 .tl-loc{font-size:11px;color:#888;margin-top:1px}
@@ -518,23 +520,31 @@ async function queryLogistics(carrier, trackingNo){
     if(data.error||!data.updates||!data.updates.length){
       body.innerHTML=`<div class="logi-error">❌ ${data.error||'暂未查询到物流信息'}</div>`; return;
     }
-    let html=`<div class="logi-info"><div><div class="lbl">状态</div><div class="val">${data.statusText}</div></div><div><div class="lbl">运单号</div><div class="val">${data.trackingNo}</div></div></div><div class="timeline">`;
-    data.updates.forEach(d=>{html+=`<div class="tl-item"><div class="tl-time">${d.time}</div><div class="tl-text">${d.context}</div>${d.location?`<div class="tl-loc">📍 ${d.location}</div>`:''}</div>`;});
-    html+='</div>';
-    body.innerHTML=html;
-  }catch(e){
-    body.innerHTML='<div class="logi-error">❌ 查询超时，请稍后重试</div>';
-  }
-}
-function closeLogistics(){ document.getElementById('logiModal').classList.remove('show'); }
-document.getElementById('logiModal').addEventListener('click',e=>{ if(e.target===e.currentTarget) closeLogistics(); });
+    // 从最后一条轨迹文字推断真实状态
+    const lastCtx = data.updates[data.updates.length-1].context || '';
+    let inferredStatus = '📦 运输中';
+    if (/签收/.test(lastCtx)) inferredStatus = '✅ 已签收';
+    else if (/签退/.test(lastCtx)) inferredStatus = '↩️ 已退回';
+    else if (/派送/.test(lastCtx) || /快递员/.test(lastCtx)) inferredStatus = '🚚 派送中';
+    else if (/揽收/.test(lastCtx)) inferredStatus = '📬 已揽收';
 
-// ─── Toast ──────────────────────────────────────────────────
-function toast(msg){
-  const el=document.getElementById('toast');
-  el.textContent=msg; el.style.display='block';
-  clearTimeout(el._timer); el._timer=setTimeout(()=>{el.style.display='none';},2500);
-}
-</script>
-</body>
-</html>
+    const carrierName = (CARRIERS.find(c=>c.code===carrier)||{}).name || carrier;
+    const updates = [...data.updates].reverse();
+    let html = `<div style="background:#f0f7ff;border-radius:8px;padding:12px;margin-bottom:14px;display:flex;justify-content:space-between;font-size:13px">
+      <div><div style="color:#888;font-size:11px">${carrierName}</div><div style="font-weight:500">${data.trackingNo}</div></div>
+      <div style="text-align:right"><div style="color:#888;font-size:11px">状态</div><div style="font-weight:600;color:#1a73e8">${inferredStatus}</div></div>
+    </div><div class="timeline">`;
+    updates.forEach((d,i) => {
+      const isLatest = i === 0;
+      html += `<div class="tl-item${isLatest ? ' tl-latest' : ''}">
+        <div class="tl-time">${d.time}</div>
+        <div class="tl-text">${d.context}</div>
+        ${d.location ? `<div class="tl-loc">📍 ${d.location}</div>` : ''}
+      </div>`;
+    });
+    html += '</div>';
+    body.innerHTML = html;
+  }catch(e){
+    body.innerHTML = '<div class="logi-error">❌ 查询超时，请稍后重试</div>';
+  }
+} </details>
