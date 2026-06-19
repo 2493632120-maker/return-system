@@ -96,7 +96,7 @@ const CARRIERS = [
 ];
 
 // ─── API ───────────────────────────────────────────────────
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'admin123';
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || '020903';
 
 app.get('/api/carriers', (req, res) => res.json(CARRIERS));
 
