@@ -118,8 +118,6 @@ tbody tr:hover{background:#f8fbff}
 
 <div class="toast" id="toast"></div>
 
-
-
 <!-- 主界面 -->
 <div id="mainApp" style="display:none">
   <div class="header" id="appHeader">
@@ -242,8 +240,8 @@ function toggleLookup(){
 }
 function guestMode(){ isAdmin=false; enterApp(false); }
 function enterApp(admin){
-const lp = document.getElementById('loginPage');
-if(lp) lp.style.display='none';
+  const lp = document.getElementById('loginPage');
+  if(lp) lp.style.display='none';
   document.getElementById('mainApp').style.display='block';
   document.getElementById('lookupPanel').style.display='block';
   const hr=document.getElementById('headerRight');
