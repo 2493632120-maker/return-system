@@ -178,6 +178,8 @@ tbody tr:hover{background:#f8fbff}
             <button type="reset" class="btn btn-outline" onclick="resetForm()">清空</button>
           </div>
         </form>
+        <!-- 提交成功结果卡片（提交后替换表单） -->
+        <div id="submitSuccess" style="display:none"></div>
       </div>
     </div>
     
@@ -226,6 +228,7 @@ const TYPE = {exchange:'🔄 换货',refund:'💰 退款'};
 let isAdmin = false;
 let data = [];
 let editingId = null;
+let lastSubmittedItem = null; // 记录最近提交的项目，方便客户修改
 
 // ─── 登录 ──────────────────────────────────────────────────
 
@@ -312,11 +315,19 @@ function viewPhoto(id){
   }).catch(()=>toast('加载失败'));
 }
 
+// ─── 防重复提交：锁定表单（客户模式下禁止重复新建） ─────
+let formLocked = false;
+
 // ─── CRUD ───────────────────────────────────────────────────
 function handleSubmit(e){
   e.preventDefault();
   const orderId=document.getElementById('orderId').value.trim();
   if(!orderId) return toast('订单号不能为空');
+
+  const submitBtn = document.querySelector('#frm .btn-primary');
+  if (submitBtn.disabled) return; // 防重复点击
+  submitBtn.disabled = true;
+  submitBtn.textContent = '⏳ 提交中...';
   
   // 读取照片为 base64
   const fileInput=document.getElementById('photoInput');
@@ -338,24 +349,52 @@ function handleSubmit(e){
     const method = editingId ? 'PUT' : 'POST';
     fetch(url,{method,headers:{'Content-Type':'application/json'},body:JSON.stringify(body)})
     .then(r=>r.json()).then(r=>{
-      if(r.error) return toast('❌ '+r.error);
+      submitBtn.disabled = false;
+      if(r.error) {
+        submitBtn.textContent = editingId ? '💾 保存修改' : '✅ 提交';
+        return toast('❌ '+r.error);
+      }
       resetForm();
-      if(isAdmin) loadData();
+      if(isAdmin) {
+        loadData();
+        toast('✅ 提交成功！');
+        return;
+      }
+      
+      // ─── 客户模式：隐藏表单 → 显示成功卡片 ─────
+      lastSubmittedItem = r.item;
       const statusText = {pending:'待处理',received:'已收到',completed:'已完成',cancelled:'已取消'};
       const s = r.item ? statusText[r.item.status]||r.item.status : '待处理';
-      if(!isAdmin){
-        const el = document.getElementById('lookupResult');
-        el.innerHTML = `<div style="padding:14px;background:#e8f5e9;border-radius:6px;font-size:14px">
-          <strong>✅ 提交成功！</strong><br><br>
-          📦 订单号：${orderId}<br>
-          📋 当前状态：<span class="badge badge-pending">${s}</span><br><br>
-          <span style="font-size:12px;color:#666">你可以用底部的「查询退换货进度」功能，输入退回单号随时查看</span>
-        </div>`;
-        document.getElementById('orderId').focus();
-      } else {
-        toast('✅ 提交成功！');
-      }
-    }).catch((e)=>toast("❌ 提交失败，照片可能太大（请压缩到5MB以内）"));
+      const itemId = r.item ? r.item.id : '';
+
+      // 隐藏表单，显示成功卡片
+      document.getElementById('frm').style.display = 'none';
+      const card = document.getElementById('submitSuccess');
+      card.style.display = 'block';
+      card.innerHTML = `<div style="padding:16px;background:#e8f5e9;border-radius:8px;font-size:14px;border:2px solid #4caf50">
+        <div style="font-size:18px;font-weight:700;margin-bottom:10px;color:#2e7d32">✅ ${editingId ? '修改成功，已更新退换货单' : '提交成功，请勿重复提交'}</div>
+        <div style="background:#fff;border-radius:6px;padding:14px;margin-bottom:12px;line-height:1.8">
+          <div>📦 订单号：<strong>${orderId}</strong></div>
+          <div>📋 当前状态：<span class="badge badge-pending">${s}</span></div>
+          <div>🔄 类型：${TYPE[body.type]||body.type}</div>
+          ${body.customer ? `<div>👤 客户：${body.customer}</div>` : ''}
+          ${body.carrier ? `<div>🔙 退回：${(CARRIERS.find(c=>c.code===body.carrier)||{}).name||body.carrier} ${body.tracking_no||''}</div>` : ''}
+          ${body.reason ? `<div>📝 原因：${body.reason}</div>` : ''}
+        </div>
+        <div style="display:flex;gap:10px;align-items:center">
+          <button style="background:#1a73e8;color:#fff;padding:10px 24px;font-size:14px;font-weight:500;border:none;border-radius:6px;cursor:pointer"
+            onclick="editSubmitted(${itemId})">✏️ 修改提交内容</button>
+          <span style="font-size:12px;color:#888">点击可重新编辑提交的信息</span>
+        </div>
+      </div>`;
+
+      // Toast
+      toast(editingId ? '✅ 修改成功，已更新退换货单' : '✅ 提交成功，请勿重复提交');
+    }).catch((e)=>{
+      submitBtn.disabled = false;
+      submitBtn.textContent = editingId ? '💾 保存修改' : '✅ 提交';
+      toast('❌ 提交失败，照片可能太大（请压缩到5MB以内）');
+    });
   };
   
   // 如果有照片，先读取再提交
@@ -368,7 +407,52 @@ function handleSubmit(e){
   }
 }
 
-function resetForm(){ editingId=null; document.getElementById('frm').reset(); document.getElementById('orderId').focus(); document.getElementById('sentFields').style.display='none'; }
+// ─── 客户修改自己的提交 ────────────────────────────────
+function editSubmitted(id) {
+  // 从全部列表中查找（API无单条GET接口）
+  fetch('/api/returns').then(r=>r.json()).then(list => {
+    const item = list.find(x => x.id === id);
+    if (!item) { toast('❌ 未找到该记录'); return; }
+    
+    // 隐藏成功卡片，显示表单
+    document.getElementById('submitSuccess').style.display = 'none';
+    document.getElementById('frm').style.display = 'block';
+
+    // 加载数据
+    editingId = id;
+    document.getElementById('orderId').value = item.order_id;
+    document.getElementById('customer').value = item.customer||'';
+    const typeRadio = document.querySelector('input[name="type"][value="'+item.type+'"]');
+    if (typeRadio) typeRadio.checked = true;
+    document.getElementById('carrier').value = item.carrier||'';
+    document.getElementById('trackingNo').value = item.tracking_no||'';
+    document.getElementById('reason').value = item.reason||'';
+    document.getElementById('note').value = item.note||'';
+    if (item.sent_carrier) document.getElementById('sentCarrier').value = item.sent_carrier;
+    if (item.sent_tracking_no) document.getElementById('sentTrackingNo').value = item.sent_tracking_no;
+
+    // 改按钮文字
+    document.querySelector('#frm .btn-primary').textContent = '💾 保存修改';
+
+    // 滚动到表单
+    document.getElementById('formPanel').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    document.getElementById('orderId').focus();
+    
+    toast('✏️ 已加载数据，修改后点击「保存修改」');
+  }).catch(() => toast('❌ 加载数据失败'));
+}
+
+function resetForm(){
+  editingId=null;
+  // 如果成功卡片可见，保持隐藏表单
+  const card = document.getElementById('submitSuccess');
+  if (card.style.display === 'block') return;
+  document.getElementById('frm').style.display = 'block';
+  document.getElementById('frm').reset();
+  document.getElementById('orderId').focus();
+  document.getElementById('sentFields').style.display='none';
+  document.querySelector('#frm .btn-primary').textContent = '✅ 提交';
+}
 
 
 

@@ -14,11 +14,12 @@ const DB_PATH = path.join(DB_DIR, 'returns.db');
 
 app.use(cors());
 app.use(express.json({ limit: '10mb' }));
-app.use(express.static(path.join(__dirname, 'public')));
 
-// ─── 路由：客户提交页 / 管理员页 ────────────────────────────
+// ─── 路由：客户提交页 / 管理员页（放在 static 之前，防止被 index.html 覆盖）───
 app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'public', 'submit.html')));
 app.get('/admin', (req, res) => res.sendFile(path.join(__dirname, 'public', 'index.html')));
+
+app.use(express.static(path.join(__dirname, 'public')));
 
 // ─── 数据库初始化 ──────────────────────────────────────────
 let db;
