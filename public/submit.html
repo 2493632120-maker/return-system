@@ -355,7 +355,7 @@ function handleSubmit(e){
       } else {
         toast('✅ 提交成功！');
       }
-    }).catch(()=>toast('❌ 提交失败，请重试'));
+    }).catch((e)=>toast("❌ 提交失败，照片可能太大（请压缩到5MB以内）"));
   };
   
   // 如果有照片，先读取再提交

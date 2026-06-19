@@ -13,7 +13,7 @@ const DB_DIR = process.env.DB_DIR || path.join(__dirname, 'data');
 const DB_PATH = path.join(DB_DIR, 'returns.db');
 
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: '10mb' }));
 app.use(express.static(path.join(__dirname, 'public')));
 
 // ─── 路由：客户提交页 / 管理员页 ────────────────────────────
