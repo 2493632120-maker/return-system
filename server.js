@@ -139,14 +139,28 @@ app.get('/api/logistics/:carrier/:trackingNo', async (req, res) => {
   }
 });
 
+// 保存图片
+function saveImage(id, imageData) {
+  if (!imageData) return;
+  try {
+    const dir = path.join(PHOTO_DIR, String(id));
+    fs.mkdirSync(dir, { recursive: true });
+    const matches = imageData.match(/^data:image\/(\w+);base64,(.+)$/);
+    const ext = matches ? matches[1] : 'jpg';
+    const data = matches ? matches[2] : imageData;
+    fs.writeFileSync(path.join(dir, 'photo.' + ext), Buffer.from(data, 'base64'));
+  } catch(e) { console.error('Save image error:', e.message); }
+}
+
 app.post('/api/returns', (req, res) => {
-  const { order_id, customer, type, carrier, tracking_no, reason, note, sent_carrier, sent_tracking_no } = req.body;
+  const { order_id, customer, type, carrier, tracking_no, reason, note, sent_carrier, sent_tracking_no, image } = req.body;
   if (!order_id) return res.status(400).json({ error: '订单号不能为空' });
   run(
     `INSERT INTO returns (order_id, customer, type, carrier, tracking_no, reason, note, sent_carrier, sent_tracking_no) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [order_id, customer || '', type || 'exchange', carrier || '', tracking_no || '', reason || '', note || '', sent_carrier || '', sent_tracking_no || '']
   );
   const item = firstRow('SELECT * FROM returns WHERE id = (SELECT MAX(id) FROM returns)');
+  if (image && item) saveImage(item.id, image);
   res.json({ ok: true, item });
 });
 
@@ -156,7 +170,7 @@ app.get('/api/returns', (req, res) => {
 
 app.put('/api/returns/:id', (req, res) => {
   const { id } = req.params;
-  const { carrier, tracking_no, reason, status, note, sent_carrier, sent_tracking_no } = req.body;
+  const { carrier, tracking_no, reason, status, note, sent_carrier, sent_tracking_no, image } = req.body;
   const fields = []; const values = [];
   if (carrier !== undefined) { fields.push('carrier = ?'); values.push(carrier); }
   if (tracking_no !== undefined) { fields.push('tracking_no = ?'); values.push(tracking_no); }
@@ -169,6 +183,7 @@ app.put('/api/returns/:id', (req, res) => {
   fields.push("updated_at = datetime('now','localtime')");
   values.push(id);
   run(`UPDATE returns SET ${fields.join(', ')} WHERE id = ?`, values);
+  if (image) saveImage(id, image);
   res.json({ ok: true, item: firstRow('SELECT * FROM returns WHERE id = ?', [id]) });
 });
 

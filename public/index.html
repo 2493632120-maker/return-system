@@ -369,25 +369,28 @@ function handleSubmit(e){
   e.preventDefault();
   const orderId=document.getElementById('orderId').value.trim();
   if(!orderId) return toast('订单号不能为空');
-  const body={
-    order_id: orderId,
-    customer: document.getElementById('customer').value.trim(),
-    type: document.querySelector('input[name="type"]:checked').value,
-    carrier: document.getElementById('carrier').value,
-    tracking_no: document.getElementById('trackingNo').value.trim(),
-    reason: document.getElementById('reason').value.trim(),
-    note: document.getElementById('note').value.trim(),
-    sent_carrier: document.getElementById('sentCarrier').value,
-    sent_tracking_no: document.getElementById('sentTrackingNo').value.trim(),
-  };
-  const url = editingId ? `/api/returns/${editingId}` : '/api/returns';
-  const method = editingId ? 'PUT' : 'POST';
-  fetch(url,{method,headers:{'Content-Type':'application/json'},body:JSON.stringify(body)})
-  .then(r=>r.json()).then(r=>{
-    if(r.error) return toast('❌ '+r.error);
-    const newId = r.item ? r.item.id : editingId;
-    // 上传照片
-    uploadPhoto(newId, function(){
+  
+  // 读取照片为 base64
+  const fileInput=document.getElementById('photoInput');
+  const doSubmit = function(photoBase64){
+    const body={
+      order_id: orderId,
+      customer: document.getElementById('customer').value.trim(),
+      type: document.querySelector('input[name="type"]:checked').value,
+      carrier: document.getElementById('carrier').value,
+      tracking_no: document.getElementById('trackingNo').value.trim(),
+      reason: document.getElementById('reason').value.trim(),
+      note: document.getElementById('note').value.trim(),
+      sent_carrier: document.getElementById('sentCarrier').value,
+      sent_tracking_no: document.getElementById('sentTrackingNo').value.trim(),
+    };
+    if(photoBase64) body.image = photoBase64;
+    
+    const url = editingId ? `/api/returns/${editingId}` : '/api/returns';
+    const method = editingId ? 'PUT' : 'POST';
+    fetch(url,{method,headers:{'Content-Type':'application/json'},body:JSON.stringify(body)})
+    .then(r=>r.json()).then(r=>{
+      if(r.error) return toast('❌ '+r.error);
       resetForm();
       if(isAdmin) loadData();
       const statusText = {pending:'待处理',received:'已收到',completed:'已完成',cancelled:'已取消'};
@@ -404,8 +407,17 @@ function handleSubmit(e){
       } else {
         toast('✅ 提交成功！');
       }
-    });
-  }).catch(()=>toast('❌ 提交失败，请重试'));
+    }).catch(()=>toast('❌ 提交失败，请重试'));
+  };
+  
+  // 如果有照片，先读取再提交
+  if(fileInput.files&&fileInput.files[0]){
+    const reader=new FileReader();
+    reader.onload=function(e){ doSubmit(e.target.result); };
+    reader.readAsDataURL(fileInput.files[0]);
+  } else {
+    doSubmit(null);
+  }
 }
 
 function resetForm(){ editingId=null; document.getElementById('frm').reset(); document.getElementById('orderId').focus(); document.getElementById('sentFields').style.display='none'; }
