@@ -114,19 +114,21 @@ tbody tr:hover{background:#f8fbff}
 <!-- 登录页 -->
 <div class="login-wrap" id="loginPage">
   <div class="login-box">
-    <h2>🔐 售后管理系统</h2>
-    <p>请输入管理密码查看后台</p>
+    <h2>瑞明换货系统</h2>
+    <p style="margin-bottom:20px;font-size:13px;color:#666">退货换货 · 进度查询</p>
+    <button style="width:100%;padding:14px;background:#43a047;color:#fff;border:none;border-radius:8px;font-size:16px;cursor:pointer;font-weight:600;margin-bottom:20px" onclick="guestMode()">📝 客户提交退换货单 →</button>
+    <hr style="border:none;border-top:1px solid #e8e8e8;margin-bottom:20px">
+    <p style="text-align:center;font-size:13px;color:#888;margin-bottom:10px">管理员入口</p>
     <input type="password" id="adminPwd" placeholder="管理密码" onkeydown="if(event.key==='Enter')adminLogin()">
     <button class="login-btn" onclick="adminLogin()">进入后台管理</button>
     <div class="login-error" id="loginError">密码错误，请重试</div>
-    <p style="margin-top:16px;font-size:12px;color:#aaa">客户直接 <a href="javascript:void(0)" onclick="guestMode()" style="color:#1a73e8">提交退换货单 →</a></p>
   </div>
 </div>
 
 <!-- 主界面 -->
 <div id="mainApp" style="display:none">
   <div class="header" id="appHeader">
-    <h1>📦 换货退货管理系统</h1>
+    <h1>📦 瑞明换货系统</h1>
     <div class="header-right" id="headerRight"></div>
   </div>
   <div class="guest-banner" id="guestBanner" style="display:none">👤 提交模式 — 你的数据提交后管理员可见</div>
