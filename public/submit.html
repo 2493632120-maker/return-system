@@ -546,4 +546,18 @@ async function queryLogistics(carrier, trackingNo){
     body.innerHTML = html;
   }catch(e){
     body.innerHTML = '<div class="logi-error">❌ 查询超时，请稍后重试</div>';
-  }
+}
+}
+
+function closeLogistics(){ document.getElementById('logiModal').classList.remove('show'); }
+document.getElementById('logiModal').addEventListener('click',e=>{ if(e.target===e.currentTarget) closeLogistics(); });
+
+function toast(msg){
+  const el=document.getElementById('toast');
+  el.textContent=msg; el.style.display='block';
+  clearTimeout(el._timer); el._timer=setTimeout(()=>{el.style.display='none';},2500);
+}
+</script>
+</body>
+</html>
+
