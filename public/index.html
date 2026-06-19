@@ -36,7 +36,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'PingFang SC','Microsoft YaHei
 .lookup-wrap{margin-top:16px}
 @media(max-width:700px){.body-wrap{grid-template-columns:1fr}}
 
-.panel{background:#fff;border-radius:8px;box-shadow:0 1px 3px rgba(0,0,0,.08);overflow:hidden}
+.panel{background:#fff;border-radius:8px;box-shadow:0 1px 3px rgba(0,0,0,.08)}
 .panel-hd{padding:12px 16px;border-bottom:1px solid #e8e8e8;display:flex;justify-content:space-between;align-items:center;font-size:14px;font-weight:600}
 .panel-bd{padding:16px}
 .form-group{margin-bottom:12px}
@@ -144,7 +144,7 @@ tbody tr:hover{background:#f8fbff}
             <label>类型</label>
             <div class="radio-group">
               <label><input type="radio" name="type" value="exchange" checked> 🔄 换货</label>
-              <label><input type="radio" name="type" value="refund"> 💰 退货退款</label>
+
             </div>
           </div>
           <div class="form-group">
@@ -199,12 +199,12 @@ tbody tr:hover{background:#f8fbff}
   <div class="lookup-wrap">
   <div class="panel" id="lookupPanel">
     <div class="panel-hd" style="cursor:pointer" onclick="toggleLookup()">
-      <span>🔍 查询退换货进度</span>
+      <span>🔍 查进度（输入退回单号或订单号）</span>
       <span style="font-size:11px;color:#888" id="lookupToggle">展开 ▼</span>
     </div>
     <div class="panel-bd" id="lookupBody" style="display:none">
       <div style="display:flex;gap:6px;margin-bottom:8px">
-        <input id="lookupOrderId" placeholder="输入订单号" style="flex:1" onkeydown="if(event.key==='Enter')lookupOrder()">
+        <input id="lookupOrderId" placeholder="输入退回运单号" style="flex:1" onkeydown="if(event.key==='Enter')lookupOrder()">
         <button class="btn btn-primary btn-sm" onclick="lookupOrder()">查询</button>
       </div>
       <div id="lookupResult"></div>
@@ -335,7 +335,7 @@ function handleSubmit(e){
         <strong>✅ 提交成功！</strong><br><br>
         📦 订单号：${orderId}<br>
         📋 当前状态：<span class="badge badge-pending">${s}</span><br><br>
-        <span style="font-size:12px;color:#666">你可以使用上方的「查询退换货进度」功能随时查看最新状态</span>
+        <span style="font-size:12px;color:#666">你可以用底部的「查询退换货进度」功能，输入退回单号随时查看</span>
       </div>`;
       document.getElementById('orderId').focus();
     } else {
@@ -414,14 +414,15 @@ function handleQuery(){
 // ─── 查询进度（客户查自己订单状态） ────────────────────
 async function lookupOrder(){
   const orderId = document.getElementById('lookupOrderId').value.trim();
-  if(!orderId) return toast('请输入订单号');
+  if(!orderId) return toast('请输入退回单号或订单号');
   try{
     const resp = await fetch('/api/returns');
     const list = await resp.json();
-    const found = list.filter(d => d.order_id.includes(orderId));
+    // 同时按订单号和运单号查询
+    const found = list.filter(d => d.order_id.includes(orderId) || d.tracking_no.includes(orderId));
     const el = document.getElementById('lookupResult');
     if(!found.length){
-      el.innerHTML = '<div style="padding:12px;color:#e53935;background:#fce4ec;border-radius:5px;font-size:13px">❌ 未找到该订单号</div>';
+      el.innerHTML = '<div style="padding:12px;color:#e53935;background:#fce4ec;border-radius:5px;font-size:13px">❌ 未找到记录，请检查单号</div>';
     } else {
       el.innerHTML = found.map(d => {
         const c = CARRIERS.find(x => x.code === d.carrier);
