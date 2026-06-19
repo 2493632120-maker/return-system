@@ -30,8 +30,9 @@ body{font-family:-apple-system,BlinkMacSystemFont,'PingFang SC','Microsoft YaHei
 .header-right .logout-btn{background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.3);color:#fff;padding:4px 12px;border-radius:5px;font-size:12px;cursor:pointer}
 .header-right .logout-btn:hover{background:rgba(255,255,255,.25)}
 
-.container{max-width:1300px;margin:0 auto;padding:16px;display:grid;grid-template-columns:380px 1fr;gap:16px}
-@media(max-width:900px){.container{grid-template-columns:1fr}}
+.container{max-width:800px;margin:0 auto;padding:16px}
+.body-wrap{display:grid;grid-template-columns:380px 1fr;gap:16px;align-items:start}
+@media(max-width:800px){.body-wrap{grid-template-columns:1fr}}
 
 .panel{background:#fff;border-radius:8px;box-shadow:0 1px 3px rgba(0,0,0,.08);overflow:hidden}
 .panel-hd{padding:12px 16px;border-bottom:1px solid #e8e8e8;display:flex;justify-content:space-between;align-items:center;font-size:14px;font-weight:600}
@@ -165,17 +166,18 @@ tbody tr:hover{background:#f8fbff}
       </div>
     </div>
 
-    <!-- 客户查询进度 -->
-    <div class="panel" id="lookupPanel">
-      <div class="panel-hd">🔍 查询退换货进度</div>
-      <div class="panel-bd">
-        <div class="form-row">
-          <div class="form-group" style="flex:1">
-            <input id="lookupOrderId" placeholder="输入订单号查询进度" onkeydown="if(event.key==='Enter')lookupOrder()">
-          </div>
-          <div style="padding-top:1px">
-            <button class="btn btn-primary" onclick="lookupOrder()">查询</button>
-          </div>
+    <div class="body-wrap">
+
+    <!-- 客户查询进度（折叠样式） -->
+    <div class="panel" id="lookupPanel" style="margin-bottom:16px">
+      <div class="panel-hd" style="cursor:pointer" onclick="toggleLookup()">
+        <span>🔍 查询退换货进度</span>
+        <span style="font-size:11px;color:#888" id="lookupToggle">展开 ▼</span>
+      </div>
+      <div class="panel-bd" id="lookupBody" style="display:none">
+        <div style="display:flex;gap:6px;margin-bottom:8px">
+          <input id="lookupOrderId" placeholder="输入订单号" style="flex:1" onkeydown="if(event.key==='Enter')lookupOrder()">
+          <button class="btn btn-primary btn-sm" onclick="lookupOrder()">查询</button>
         </div>
         <div id="lookupResult"></div>
       </div>
@@ -353,6 +355,13 @@ function setStatus(id, status){
   .then(r=>r.json()).then(r=>{ if(r.ok) loadData(); });
 }
 
+function deleteItem(id){
+  if(!isAdmin) return;
+  if(!confirm('确定删除这条记录？')) return;
+  fetch(`/api/returns/${id}`,{method:'DELETE'})
+  .then(r=>r.json()).then(r=>{ if(r.ok) loadData(); });
+}
+
 // ─── 渲染 ───────────────────────────────────────────────────
 function render(){
   const filter=document.getElementById('filter').value;
@@ -378,6 +387,7 @@ function render(){
         <select class="status-sel" onchange="setStatus(${item.id},this.value)"><option value="">状态</option>
           <option value="pending">待处理</option><option value="received">已收到</option>
           <option value="completed">已完成</option><option value="cancelled">已取消</option></select>
+        <button class="btn btn-sm btn-outline" style="color:#e53935;border-color:#e53935" onclick="deleteItem(${item.id})">🗑</button>
       </div></td>
     </tr>`;
   }).join('');
