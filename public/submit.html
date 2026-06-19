@@ -370,20 +370,19 @@ function handleSubmit(e){
       const oldBar = document.getElementById('successBar');
       if (oldBar) oldBar.remove();
 
-      // 在页面顶部创建绿色固定提示条 + 修改按钮
-      const bar = document.createElement('div');
-      bar.id = 'successBar';
-      bar.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:9999;background:#e8f5e9;border-bottom:3px solid #4caf50;padding:12px 20px;font-size:14px;box-shadow:0 4px 12px rgba(0,0,0,.15);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px';
-      bar.innerHTML = `<span style="font-weight:700;color:#2e7d32">✅ ${editingId ? '修改成功，已更新退换货单' : '提交成功，请勿重复提交'} — ${orderId}</span>
-        <div style="display:flex;gap:8px;align-items:center">
-          <button style="background:#1a73e8;color:#fff;padding:8px 18px;font-size:14px;font-weight:500;border:none;border-radius:6px;cursor:pointer"
-            onclick="editSubmitted(${itemId})">✏️ 修改提交内容</button>
-          <span style="font-size:12px;color:#666">点击可重新编辑</span>
-        </div>`;
-      document.body.prepend(bar);
+      // 在页面中间显示弹窗 + 修改按钮
+const bar = document.createElement('div');
+bar.id = 'successBar';
+bar.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;z-index:9999;background:rgba(0,0,0,.35);display:flex;align-items:center;justify-content:center';
+bar.innerHTML = `<div style="background:#e8f5e9;border:3px solid #4caf50;border-radius:12px;padding:24px 32px;max-width:500px;width:90vw;box-shadow:0 8px 32px rgba(0,0,0,.2);text-align:center">
+  <div style="font-size:22px;font-weight:700;color:#2e7d32;margin-bottom:12px">✅ ${editingId ? '修改成功，已更新退换货单' : '提交成功，请勿重复提交'}</div>
+  <div style="font-size:14px;color:#555;margin-bottom:16px">📦 订单号：<strong>${orderId}</strong></div>
+  <button style="background:#1a73e8;color:#fff;padding:10px 28px;font-size:15px;font-weight:500;border:none;border-radius:6px;cursor:pointer"
+    onclick="editSubmitted(${itemId})">✏️ 修改提交内容</button>
+  <div style="margin-top:8px;font-size:12px;color:#888">点击按钮可重新编辑提交的信息</div>
+</div>`;
+document.body.appendChild(bar);
 
-      // 页面内容下移，避免被固定条遮挡
-      document.body.style.paddingTop = '60px';
 
       // Toast 也显示
       toast(editingId ? '✅ 修改成功，已更新退换货单' : '✅ 提交成功，请勿重复提交');
