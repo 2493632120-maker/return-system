@@ -54,6 +54,9 @@ async function initDb() {
       type        TEXT NOT NULL DEFAULT 'exchange',
       carrier     TEXT NOT NULL DEFAULT '',
       tracking_no TEXT NOT NULL DEFAULT '',
+      return_address TEXT NOT NULL DEFAULT '',
+      return_contact  TEXT NOT NULL DEFAULT '',
+      return_phone   TEXT NOT NULL DEFAULT '',
       reason      TEXT NOT NULL DEFAULT '',
       status      TEXT NOT NULL DEFAULT 'pending',
       note        TEXT NOT NULL DEFAULT '',
@@ -63,9 +66,12 @@ async function initDb() {
       updated_at  DATETIME DEFAULT (datetime('now','localtime'))
     )
   `);
-  // 数据库迁移：添加寄回单号字段
+  // 数据库迁移
   try { db.run('ALTER TABLE returns ADD COLUMN sent_carrier TEXT NOT NULL DEFAULT ""'); } catch(e) {}
   try { db.run('ALTER TABLE returns ADD COLUMN sent_tracking_no TEXT NOT NULL DEFAULT ""'); } catch(e) {}
+  try { db.run('ALTER TABLE returns ADD COLUMN return_address TEXT NOT NULL DEFAULT ""'); } catch(e) {}
+  try { db.run('ALTER TABLE returns ADD COLUMN return_contact TEXT NOT NULL DEFAULT ""'); } catch(e) {}
+  try { db.run('ALTER TABLE returns ADD COLUMN return_phone TEXT NOT NULL DEFAULT ""'); } catch(e) {}
   saveDb();
 }
 
@@ -154,11 +160,11 @@ function saveImage(id, imageData) {
 }
 
 app.post('/api/returns', (req, res) => {
-  const { order_id, customer, type, carrier, tracking_no, reason, note, sent_carrier, sent_tracking_no, image } = req.body;
+  const { order_id, customer, type, carrier, tracking_no, return_address, return_contact, return_phone, reason, note, sent_carrier, sent_tracking_no, image } = req.body;
   if (!order_id) return res.status(400).json({ error: '订单号不能为空' });
   run(
-    `INSERT INTO returns (order_id, customer, type, carrier, tracking_no, reason, note, sent_carrier, sent_tracking_no) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-    [order_id, customer || '', type || 'exchange', carrier || '', tracking_no || '', reason || '', note || '', sent_carrier || '', sent_tracking_no || '']
+    `INSERT INTO returns (order_id, customer, type, carrier, tracking_no, return_address, return_contact, return_phone, reason, note, sent_carrier, sent_tracking_no) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    [order_id, customer || '', type || 'exchange', carrier || '', tracking_no || '', return_address || '', return_contact || '', return_phone || '', reason || '', note || '', sent_carrier || '', sent_tracking_no || '']
   );
   const item = firstRow('SELECT * FROM returns WHERE id = (SELECT MAX(id) FROM returns)');
   if (image && item) saveImage(item.id, image);
@@ -171,13 +177,16 @@ app.get('/api/returns', (req, res) => {
 
 app.put('/api/returns/:id', (req, res) => {
   const { id } = req.params;
-  const { order_id, customer, type, carrier, tracking_no, reason, status, note, sent_carrier, sent_tracking_no, image } = req.body;
+  const { order_id, customer, type, carrier, tracking_no, return_address, return_contact, return_phone, reason, status, note, sent_carrier, sent_tracking_no, image } = req.body;
   const fields = []; const values = [];
   if (order_id !== undefined) { fields.push('order_id = ?'); values.push(order_id); }
   if (customer !== undefined) { fields.push('customer = ?'); values.push(customer); }
   if (type !== undefined) { fields.push('type = ?'); values.push(type); }
   if (carrier !== undefined) { fields.push('carrier = ?'); values.push(carrier); }
   if (tracking_no !== undefined) { fields.push('tracking_no = ?'); values.push(tracking_no); }
+  if (return_address !== undefined) { fields.push('return_address = ?'); values.push(return_address); }
+  if (return_contact !== undefined) { fields.push('return_contact = ?'); values.push(return_contact); }
+  if (return_phone !== undefined) { fields.push('return_phone = ?'); values.push(return_phone); }
   if (reason !== undefined) { fields.push('reason = ?'); values.push(reason); }
   if (status !== undefined) { fields.push('status = ?'); values.push(status); }
   if (note !== undefined) { fields.push('note = ?'); values.push(note); }

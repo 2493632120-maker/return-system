@@ -135,11 +135,19 @@ tbody tr:hover{background:#f8fbff}
             <div class="form-group"><label>订单号 <span class="req">*</span></label><input id="orderId" placeholder="如 DD20240618001" required></div>
             <div class="form-group"><label>客户</label><input id="customer" placeholder="姓名/昵称"></div>
           </div>
+          <div class="form-group" style="border:2px solid #4caf50;border-radius:8px;padding:12px;background:#f1f8e9;margin-bottom:12px">
+            <div style="font-size:13px;font-weight:600;color:#2e7d32;margin-bottom:8px">📬 寄回地址（换货新货将寄到这里）</div>
+            <div class="form-row">
+              <div class="form-group" style="flex:3"><label>地址 <span class="req">*</span></label><input id="returnAddress" placeholder="省市区/街道/门牌号"></div>
+              <div class="form-group" style="flex:1"><label>联系人 <span class="req">*</span></label><input id="returnContact" placeholder="收件人姓名"></div>
+              <div class="form-group" style="flex:1"><label>联系电话 <span class="req">*</span></label><input id="returnPhone" placeholder="手机号"></div>
+            </div>
+          </div>
           <div class="form-group">
             <label>类型</label>
             <div class="radio-group">
               <label><input type="radio" name="type" value="exchange" checked> 🔄 换货</label>
-
+              <label><input type="radio" name="type" value="refund"> 💰 退货退款</label>
             </div>
           </div>
           <div class="form-group">
@@ -334,6 +342,9 @@ function handleSubmit(e){
     const body={
       order_id: orderId,
       customer: document.getElementById('customer').value.trim(),
+      return_address: document.getElementById('returnAddress').value.trim(),
+      return_contact: document.getElementById('returnContact').value.trim(),
+      return_phone: document.getElementById('returnPhone').value.trim(),
       type: document.querySelector('input[name="type"]:checked').value,
       carrier: document.getElementById('carrier').value,
       tracking_no: document.getElementById('trackingNo').value.trim(),
@@ -371,18 +382,17 @@ function handleSubmit(e){
       if (oldBar) oldBar.remove();
 
       // 在页面中间显示弹窗 + 修改按钮
-const bar = document.createElement('div');
-bar.id = 'successBar';
-bar.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;z-index:9999;background:rgba(0,0,0,.35);display:flex;align-items:center;justify-content:center';
-bar.innerHTML = `<div style="background:#e8f5e9;border:3px solid #4caf50;border-radius:12px;padding:24px 32px;max-width:500px;width:90vw;box-shadow:0 8px 32px rgba(0,0,0,.2);text-align:center">
-  <div style="font-size:22px;font-weight:700;color:#2e7d32;margin-bottom:12px">✅ ${editingId ? '修改成功，已更新退换货单' : '提交成功，请勿重复提交'}</div>
-  <div style="font-size:14px;color:#555;margin-bottom:16px">📦 订单号：<strong>${orderId}</strong></div>
-  <button style="background:#1a73e8;color:#fff;padding:10px 28px;font-size:15px;font-weight:500;border:none;border-radius:6px;cursor:pointer"
-    onclick="editSubmitted(${itemId})">✏️ 修改提交内容</button>
-  <div style="margin-top:8px;font-size:12px;color:#888">点击按钮可重新编辑提交的信息</div>
-</div>`;
-document.body.appendChild(bar);
-
+      const bar = document.createElement('div');
+      bar.id = 'successBar';
+      bar.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;z-index:9999;background:rgba(0,0,0,.35);display:flex;align-items:center;justify-content:center';
+      bar.innerHTML = `<div style="background:#e8f5e9;border:3px solid #4caf50;border-radius:12px;padding:24px 32px;max-width:500px;width:90vw;box-shadow:0 8px 32px rgba(0,0,0,.2);text-align:center">
+        <div style="font-size:22px;font-weight:700;color:#2e7d32;margin-bottom:12px">✅ ${editingId ? '修改成功，已更新退换货单' : '提交成功，请勿重复提交'}</div>
+        <div style="font-size:14px;color:#555;margin-bottom:16px">📦 订单号：<strong>${orderId}</strong></div>
+        <button style="background:#1a73e8;color:#fff;padding:10px 28px;font-size:15px;font-weight:500;border:none;border-radius:6px;cursor:pointer"
+          onclick="editSubmitted(${itemId})">✏️ 修改提交内容</button>
+        <div style="margin-top:8px;font-size:12px;color:#888">点击按钮可重新编辑提交的信息</div>
+      </div>`;
+      document.body.appendChild(bar);
 
       // Toast 也显示
       toast(editingId ? '✅ 修改成功，已更新退换货单' : '✅ 提交成功，请勿重复提交');
@@ -405,10 +415,9 @@ document.body.appendChild(bar);
 
 // ─── 客户修改自己的提交 ────────────────────────────────
 function editSubmitted(id) {
-  // 移除顶部的成功提示条
+  // 移除成功弹窗
   const bar = document.getElementById('successBar');
   if (bar) bar.remove();
-  document.body.style.paddingTop = '';
 
   // 从全部列表中查找（API无单条GET接口）
   fetch('/api/returns').then(r=>r.json()).then(list => {
@@ -425,6 +434,9 @@ function editSubmitted(id) {
     document.getElementById('customer').value = item.customer||'';
     const typeRadio = document.querySelector('input[name="type"][value="'+item.type+'"]');
     if (typeRadio) typeRadio.checked = true;
+    document.getElementById('returnAddress').value = item.return_address||'';
+    document.getElementById('returnContact').value = item.return_contact||'';
+    document.getElementById('returnPhone').value = item.return_phone||'';
     document.getElementById('carrier').value = item.carrier||'';
     document.getElementById('trackingNo').value = item.tracking_no||'';
     document.getElementById('reason').value = item.reason||'';
@@ -491,6 +503,7 @@ async function lookupOrder(){
           <div style="margin-top:4px;color:#555">
             🔙 退回: ${c?c.name:d.carrier||'—'} ${d.tracking_no||''}<br>
             ${d.sent_tracking_no ? '📦 寄回: '+ (sc?sc.name:d.sent_carrier||'—') +' '+ d.sent_tracking_no +'<br>' : ''}
+            📬 寄回地址: ${d.return_contact||'—'} ${d.return_phone?d.return_phone:''} ${d.return_address||''}<br>
             原因: ${d.reason||'—'}<br>
             <span class="track-link" onclick="viewPhoto(${d.id})">📷 查看退回照片</span><br>
             状态: <span class="badge badge-${d.status}">${STATUS[d.status]||d.status}</span>
@@ -518,7 +531,7 @@ async function queryLogistics(carrier, trackingNo){
     if(data.error||!data.updates||!data.updates.length){
       body.innerHTML=`<div class="logi-error">❌ ${data.error||'暂未查询到物流信息'}</div>`; return;
     }
-    // 从最后一条轨迹文字推断真实状态
+    // 从最后一条轨迹文字推断真实状态，不用快递100的状态码
     const lastCtx = data.updates[data.updates.length-1].context || '';
     let inferredStatus = '📦 运输中';
     if (/签收/.test(lastCtx)) inferredStatus = '✅ 已签收';
@@ -526,7 +539,10 @@ async function queryLogistics(carrier, trackingNo){
     else if (/派送/.test(lastCtx) || /快递员/.test(lastCtx)) inferredStatus = '🚚 派送中';
     else if (/揽收/.test(lastCtx)) inferredStatus = '📬 已揽收';
 
+    // 快递公司名称
     const carrierName = (CARRIERS.find(c=>c.code===carrier)||{}).name || carrier;
+
+    // 时间线：最新的记录排最上面
     const updates = [...data.updates].reverse();
     let html = `<div style="background:#f0f7ff;border-radius:8px;padding:12px;margin-bottom:14px;display:flex;justify-content:space-between;font-size:13px">
       <div><div style="color:#888;font-size:11px">${carrierName}</div><div style="font-weight:500">${data.trackingNo}</div></div>
@@ -544,7 +560,7 @@ async function queryLogistics(carrier, trackingNo){
     body.innerHTML = html;
   }catch(e){
     body.innerHTML = '<div class="logi-error">❌ 查询超时，请稍后重试</div>';
-}
+  }
 }
 
 function closeLogistics(){ document.getElementById('logiModal').classList.remove('show'); }
