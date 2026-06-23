@@ -68,7 +68,11 @@ textarea{resize:vertical}
 .chip:hover{border-color:#1a73e8;color:#1a73e8;background:#e8f0fe}
 .radio-group{display:flex;gap:16px;padding-top:2px}
 .radio-group label{display:flex;align-items:center;gap:4px;font-size:13px;cursor:pointer;font-weight:400}
-.table-wrap{overflow-x:auto}
+.table-wrap{overflow-x:auto;overflow-y:hidden;padding-bottom:4px}
+.table-wrap::-webkit-scrollbar{height:8px}
+.table-wrap::-webkit-scrollbar-track{background:#f0f0f0;border-radius:4px}
+.table-wrap::-webkit-scrollbar-thumb{background:#c0c0c0;border-radius:4px;min-height:20px}
+.table-wrap::-webkit-scrollbar-thumb:hover{background:#a0a0a0}
 table{width:100%;border-collapse:collapse;font-size:12px}
 thead th{background:#fafafa;padding:8px 10px;text-align:left;font-weight:600;color:#555;border-bottom:2px solid #e8e8e8;white-space:nowrap}
 tbody td{padding:8px 10px;border-bottom:1px solid #f0f0f0;vertical-align:middle}
