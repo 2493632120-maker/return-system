@@ -220,7 +220,7 @@ tbody tr:hover{background:#f8fbff}
         <div class="table-wrap">
           <table>
             <thead><tr>
-              <th>#</th><th>订单号</th><th>客户</th><th>类型</th><th>退回快递</th><th>退回单号</th><th>寄回地址</th><th>寄回单号</th><th>照片</th><th>原因</th><th>状态</th><th>时间</th><th>操作</th>
+              <th>#</th><th>订单号</th><th>客户</th><th>类型</th><th>退回快递</th><th>退回单号</th><th>退回物品</th><th>寄回地址</th><th>寄回单号</th><th>照片</th><th>原因</th><th>状态</th><th>时间</th><th>操作</th>
             </tr></thead>
             <tbody id="tbody"></tbody>
           </table>
@@ -476,7 +476,7 @@ function render(){
   let list=filter?data.filter(d=>d.status===filter):data;
   const tbody=document.getElementById('tbody');
   if(!list.length){
-    tbody.innerHTML='<tr><td colspan="13" class="empty">暂无数据</td></tr>';
+    tbody.innerHTML='<tr><td colspan="14" class="empty">暂无数据</td></tr>';
     document.getElementById('count').textContent='0 条'; return;
   }
   document.getElementById('count').textContent=`${list.length} 条`;
@@ -493,6 +493,7 @@ function render(){
       <td>${TYPE[item.type]||item.type}</td>
       <td>${c?c.name:item.carrier||'—'}</td>
       <td>${item.tracking_no?`<a class="track-link" onclick="queryLogistics('${item.carrier}','${item.tracking_no}')">🔙 ${item.tracking_no}</a>`:'—'}</td>
+      <td style="max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${item.return_items}">${item.return_items||'—'}</td>
       <td style="max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${addrStr}">${addrStr||'—'}</td>
       <td>${item.sent_tracking_no?`<a class="track-link" onclick="queryLogistics('${item.sent_carrier||'shunfeng'}','${item.sent_tracking_no}')">📦 ${item.sent_tracking_no}</a>`:'—'}</td>
       <td><span class="track-link" onclick="viewPhoto(${item.id})">📷 查看</span></td>
